@@ -1,0 +1,14 @@
+{
+	"presets": [
+		["@babel/preset-env", {
+			"targets": {
+				"browsers": ["Safari >= 9", "last 3 versions", "not ie <= 10"]
+			},
+			"corejs": 2,
+			"useBuiltIns": "entry"
+		}]
+	],
+	"plugins" : [
+		"transform-flow-comments"
+	]
+}

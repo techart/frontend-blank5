@@ -1,0 +1,6 @@
+[ignore]
+<PROJECT_ROOT>/node_modules/config-chain/test/.*
+[include]
+[libs]
+flow-typed/
+[options]
