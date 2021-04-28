@@ -6,6 +6,7 @@ const DirectoryNamedWebpackPlugin = require('directory-named-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const styleLintPlugin = require('stylelint-webpack-plugin');
 const utils = require('./webpack/utils');
+const webpack = require('/usr/local/lib/node_modules/webpack');
 
 var env = process.env.NODE_ENV || 'hot';
 var production = env === 'prod';
@@ -39,6 +40,12 @@ Object.assign(stats, userSettings.stats);
 Plugins ******************************************************************************************************************
 **/
 
+var provideVariables = {
+	BEM: ['@webtechart/tao-bem', 'default'],
+	Vue: ['vue', 'default'],
+	$: 'jquery',
+	jQuery: 'jquery',
+};
 
 var plugins = [
 	new styleLintPlugin({
@@ -57,6 +64,8 @@ var plugins = [
 		path: __dirname,
 		prettyPrint: true,
 	}),
+	
+	new webpack.ProvidePlugin(provideVariables),
 ];
 
 /**
