@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const DirectoryNamedWebpackPlugin = require('directory-named-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const styleLintPlugin = require('stylelint-webpack-plugin');
+const { VueLoaderPlugin } = require('vue-loader');
 const utils = require('./webpack/utils');
 const webpack = require('/usr/local/lib/node_modules/webpack');
 
@@ -66,6 +67,7 @@ var plugins = [
 	}),
 	
 	new webpack.ProvidePlugin(provideVariables),
+	new VueLoaderPlugin(),
 ];
 
 /**
@@ -128,6 +130,7 @@ let _exports = {
 		publicPath: utils.publicPath(env),
 		devtoolModuleFilenameTemplate: '[absolute-resource-path]',
 		devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]',
+		libraryExport: 'default',
 	},
 	resolve: {
 		extensions: ['.js', '.vue', '.scss', '.less', '.css', '.sass'],
@@ -135,6 +138,7 @@ let _exports = {
 			'vue$': 'vue/dist/vue.esm.js',
 			'tao-bem': '@webtechart/tao-bem',
 			font: 'font',
+			'components-vue': path.resolve(__dirname, 'src/component-vue'),
 		},
 		byDependency: {
 			style: {
