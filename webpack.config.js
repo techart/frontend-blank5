@@ -193,6 +193,22 @@ let _exports = {
 	plugins: plugins
 }
 
+if (userSettings.exposeGlobal) {
+	userSettings.exposeGlobal.forEach(function (item) {
+		_exports.module.rules.push({
+			test: require.resolve(item.module),
+			loader: 'expose-loader',
+			options: {
+				exposes: item.names
+			}
+		});
+	});
+}
+
+if (userSettings.aliases) {
+	_exports.resolve.alias = Object.assign(_exports.resolve.alias, userSettings.aliases);
+}
+
 /**
 Hot ******************************************************************************************************************
 **/
