@@ -199,7 +199,8 @@ if (userSettings.exposeGlobal) {
 			test: require.resolve(item.module),
 			loader: 'expose-loader',
 			options: {
-				exposes: item.names
+				exposes: item.names,
+				override: true
 			}
 		});
 	});
