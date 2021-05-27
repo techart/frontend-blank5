@@ -1,6 +1,6 @@
 {
   "name": "tao-webpack",
-  "version": "5.4.0",
+  "version": "5.4.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -53,6 +53,7 @@
     "vue-loader": "15.9.x",
     "vue-template-compiler": "2.6.x",
     "webpack": "5.x",
+    "webpack-cli": "^4.7.x",
     "webpack-node-externals": "2.5.x"
   }
 }
