@@ -7,9 +7,9 @@ const AssetsPlugin = require('assets-webpack-plugin');
 const styleLintPlugin = require('stylelint-webpack-plugin');
 const { VueLoaderPlugin } = require('vue-loader');
 const utils = require('./webpack/utils');
-const webpack = require('/usr/local/lib/node_modules/webpack');
+const webpack = require('webpack');
 
-var env = process.env.NODE_ENV || 'hot';
+var env = process.env.NODE_ENV || 'dev';
 var production = env === 'prod';
 var hot = env === 'hot';
 
@@ -199,8 +199,10 @@ if (userSettings.exposeGlobal) {
 			test: require.resolve(item.module),
 			loader: 'expose-loader',
 			options: {
-				exposes: item.names,
-				override: true
+				exposes: {
+					globalName: item.name,
+					override: true,
+				}
 			}
 		});
 	});

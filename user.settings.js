@@ -40,5 +40,8 @@ module.exports = {
 	},
 	providePlugin: { // Автоматическая подгрузка модулей через providePlugin
 	},
-	exposeGlobal: [{'module': 'jquery', 'names': ['jQuery', '$']}],
+	exposeGlobal: [
+		{'module': 'jquery', 'name': '$'},
+		{'module': 'jquery', 'name': 'jQuery'},
+	],
 };
