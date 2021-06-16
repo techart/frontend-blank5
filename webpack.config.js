@@ -13,12 +13,22 @@ var env = process.env.NODE_ENV || 'dev';
 var production = env === 'prod';
 var hot = env === 'hot';
 
-var addHash = function addTemplateHash(template, hash, devHash) {
-	devHash = devHash || hash;
-	return (production && userSettings.hash.prod ? template.replace(/\.[^.]+$/, `/[${hash}:3]/[${hash}]$&`) :
-		(userSettings.hash.dev ? `${template}?h=[${devHash}]` : template));
-};
+var date = new Date();
 
+
+let filenameTemplate = function(template) {
+	if (production) {
+		return date.getFullYear()
+			+ '/' + (date.getMonth() + 1).toString().padStart(2, '0')
+			+ '-' + date.getDate().toString().padStart(2, '0')
+			+ '/' + date.getHours().toString().padStart(2, '0')
+			+ '-' + date.getMinutes().toString().padStart(2, '0')
+			+ '-' + date.getSeconds().toString().padStart(2, '0')
+			+ '-' + date.getMilliseconds().toString().padStart(3, '0')
+			+ '/' + template;
+	}
+	return template;
+};
 
 let stats = {
 	hash: false,
@@ -57,7 +67,7 @@ var plugins = [
 	}),
 	
 	new MiniCssExtractPlugin({
-		filename: addHash('css/[name].css', 'contenthash'),
+		filename: filenameTemplate('css/[name].css'),
 	}),
 	
 	new AssetsPlugin({
@@ -125,8 +135,7 @@ let _exports = {
 	target: 'web',
 	output: {
 		path: utils.buildPath(env),
-		filename: addHash('js/[name].js', 'chunkhash', 'hash'),
-		chunkFilename: addHash('js/[name].js', 'chunkhash', 'hash'),
+		filename: filenameTemplate('js/[name].js'),
 		publicPath: utils.publicPath(env),
 		devtoolModuleFilenameTemplate: '[absolute-resource-path]',
 		devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]',

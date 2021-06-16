@@ -13,10 +13,6 @@ module.exports = {
 		// main: ['./src/page/main/main.js']
 		'admin-wysiwyg' : ['./src/style/layout/admin-wysiwyg.scss']
 	},
-	hash: {
-		'dev': false,
-		'prod': true
-	},
 	stats: {},
 	https: true,
 	images: {
