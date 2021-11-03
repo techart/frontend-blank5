@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const DirectoryNamedWebpackPlugin = require('directory-named-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const styleLintPlugin = require('stylelint-webpack-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
 const { VueLoaderPlugin } = require('vue-loader');
 const utils = require('./webpack/utils');
 const webpack = require('webpack');
@@ -78,6 +79,7 @@ var plugins = [
 	
 	new webpack.ProvidePlugin(provideVariables),
 	new VueLoaderPlugin(),
+	new ESLintPlugin({})
 ];
 
 /**
