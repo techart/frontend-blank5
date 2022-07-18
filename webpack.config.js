@@ -58,17 +58,20 @@ var provideVariables = {
 	$: 'jquery',
 	jQuery: 'jquery',
 };
+if (userSettings.providePlugin) {
+	provideVariables = Object.assign(provideVariables, userSettings.providePlugin);
+}
 
 var plugins = [
 	new styleLintPlugin({
-		syntax: userSettings.mainStyleType,
+		customSyntax: userSettings.mainStyleType,
 		emitError: false,
 		emitWarning: true,
 		quiet: false,
 	}),
 	
 	new MiniCssExtractPlugin({
-		filename: filenameTemplate('css/[name].css'),
+		filename: userSettings.MiniCssExtractTemplate ? userSettings.MiniCssExtractTemplate : filenameTemplate('css/[name].css'),
 	}),
 	
 	new AssetsPlugin({
@@ -101,6 +104,11 @@ let cssLoader = {
 		}
 	}
 };
+let cssProcessing = [
+	MiniCssExtractPlugin.loader,
+	cssLoader,
+	'sass-loader'
+];
 
 let urlLoader = {
 	loader: 'url-loader',
@@ -188,7 +196,7 @@ let _exports = {
 			},
 			{
 				test: /\.(scss|sass|css)$/,
-				use : [MiniCssExtractPlugin.loader, cssLoader, 'sass-loader'],
+				use : (userSettings.cssProcessing && (0 < userSettings.cssProcessing.length)) ? userSettings.cssProcessing : cssProcessing,
 			},
 			{
 				test: /\.(png|gif|jpe?g|svg|cur)$/i,
@@ -221,6 +229,33 @@ if (userSettings.exposeGlobal) {
 
 if (userSettings.aliases) {
 	_exports.resolve.alias = Object.assign(_exports.resolve.alias, userSettings.aliases);
+}
+
+if (userSettings.resolve) {
+	if (userSettings.resolve.extensions) {
+		userSettings.resolve.extensions.forEach((ext) => {
+			if (-1 === _exports.resolve.extensions.indexOf(ext)) {
+				_exports.resolve.extensions.push(ext);
+			}
+		});
+	}
+	if (userSettings.resolve.modules) {
+		userSettings.resolve.modules.forEach((path) => {
+			if (-1 === _exports.resolve.modules.indexOf(path)) {
+				_exports.resolve.modules.push(path);
+			}
+		});
+	}
+}
+
+if (userSettings.module && userSettings.module.rules) {
+	userSettings.module.rules.forEach((rule) => {
+		_exports.module.rules.push(rule);
+	});
+}
+
+if (userSettings.output) {
+	_exports.output = userSettings.output;
 }
 
 /**

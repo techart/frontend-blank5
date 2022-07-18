@@ -2,7 +2,7 @@ module.exports = {
 	docRoot: '../www',
 	buildPath: '../www/builds',
 	hotPort: 8889,
-	mainStyleType: 'scss',
+	mainStyleType: 'postcss-scss',
 	mainTemplateType: 'blade',
 	entry: {
 		// Для вынесения общих частей всех точек входа нужно раскомментировать эту строчку
@@ -40,4 +40,8 @@ module.exports = {
 		{'module': 'jquery', 'name': '$'},
 		{'module': 'jquery', 'name': 'jQuery'},
 	],
+	resolve: {},
+	module: {},
+	output: {},
+	cssProcessing: [],
 };
