@@ -254,7 +254,7 @@ if (userSettings.module && userSettings.module.rules) {
 	});
 }
 
-if (userSettings.output) {
+if (0 < Object.keys(userSettings.output).length) {
 	_exports.output = userSettings.output;
 }
 
