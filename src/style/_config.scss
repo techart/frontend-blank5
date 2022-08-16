@@ -1,24 +1,24 @@
-//Пользовательские переменные
+// Пользовательские переменные
 
-//Цвета, по возможности желательно придерживаться этого формата
+// Цвета, по возможности желательно придерживаться этого формата
 $color-white: #fefefe;
 $color-black: #0a0a0a;
 $color-gray: #cacaca;
 $color-gray-light: #e6e6e6;
 $color-gray-dark: #8a8a8a;
 
-//Foundation - глобальная конфигурация шрифта
+// Foundation - глобальная конфигурация шрифта
 $global-font-size: 16px;
 $global-lineheight: 1.4;
 $global-weight-normal: normal;
 $global-weight-bold: bold;
 
-//Foundation - основные параметры body
+// Foundation - основные параметры body
 $body-background: $color-white;
 $body-font-color: $color-black;
-$body-font-family: 'Helvetica Neue', helvetica, roboto, arial, sans-serif;
+$body-font-family: "Helvetica Neue", helvetica, roboto, arial, sans-serif;
 
-//Foundation - настройки сеток
+// Foundation - настройки сеток
 $grid-columns: 12;
 $global-width: 1200px;
 $breakpoints: (

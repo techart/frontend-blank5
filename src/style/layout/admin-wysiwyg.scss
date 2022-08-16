@@ -1,6 +1,5 @@
 @import "~style";
-
-@include site-fonts();
+@include site-fonts;
 
 body.wysiwyg {
 	background: $body-background;
@@ -12,8 +11,8 @@ body.wysiwyg {
 	margin: 0;
 	padding: 0;
 
-	@include foundation-global-styles();
-	@include wysiwyg();
+	@include foundation-global-styles;
+	@include wysiwyg;
 
 	.c-hidden {
 		display: block;

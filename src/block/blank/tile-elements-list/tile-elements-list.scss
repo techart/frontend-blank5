@@ -1,9 +1,9 @@
 @import "~style";
 
-$block-name: 'b-tile-elements-list';
+$block-name: "b-tile-elements-list";
 
 .#{$block-name} {
-	@include xy-grid();
+	@include xy-grid;
 
 	&__item {
 		@include xy-cell(12);

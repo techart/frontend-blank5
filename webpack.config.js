@@ -65,7 +65,7 @@ if (userSettings.providePlugin) {
 var plugins = [
 	new styleLintPlugin({
 		customSyntax: userSettings.mainStyleType,
-		emitError: false,
+		emitError: true,
 		emitWarning: true,
 		quiet: false,
 	}),

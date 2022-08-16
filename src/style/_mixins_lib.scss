@@ -3,21 +3,21 @@
 
 @mixin container() {
 	&__middle {
-		@include xy-grid-container();
+		@include xy-grid-container;
 	}
 
 	&__row {
-		@include xy-grid();
+		@include xy-grid;
 		@include xy-gutters($negative: true);
 	}
 }
 
 @mixin font-face($name, $path, $weight: normal, $style: normal, $woff2: false) {
-	$src: if($woff2, append(null, url($path + ".woff2") format(quote("woff2"))), null);
-	$src: append($src, url($path + ".woff") format(quote("woff")), comma);
+	$src: if($woff2, list.append(null, url($path + ".woff2") format(string.quote("woff2"))), null);
+	$src: list.append($src, url($path + ".woff") format(string.quote("woff")), comma);
 
 	@font-face {
-		font-family: quote($name);
+		font-family: string.quote($name);
 		font-style: $style;
 		font-weight: $weight;
 		src: $src;

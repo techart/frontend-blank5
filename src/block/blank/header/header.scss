@@ -1,9 +1,9 @@
 @import "~style";
 
-$block-name: 'b-header';
+$block-name: "b-header";
 
 .#{$block-name} {
-	@include container();
+	@include container;
 
 	&__row {
 		align-items: center;

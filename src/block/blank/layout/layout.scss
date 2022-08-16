@@ -1,6 +1,6 @@
 @import "~style";
 
-$block-name: 'b-layout';
+$block-name: "b-layout";
 
 .#{$block-name} {
 	display: flex;
@@ -19,7 +19,7 @@ $block-name: 'b-layout';
 	}
 
 	&__page-container {
-		@include xy-grid-container();
+		@include xy-grid-container;
 	}
 
 	&__footer {
