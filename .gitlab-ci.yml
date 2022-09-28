@@ -1,0 +1,5 @@
+variables:
+ UPDATE_REPO: "git@github.com:techart/frontend-blank5.git"
+include:
+ - project: "libs/cicd-includes"
+   file: "/templates/.gitlab-ci-github-js.yml"

@@ -1,6 +1,6 @@
 {
   "name": "tao-webpack",
-  "version": "5.8.0",
+  "version": "5.8.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,10 @@
     "build-prod": "NODE_ENV=prod webpack --progress",
     "build-dev": "NODE_ENV=dev webpack --progress",
     "pkg": "yarn",
-    "install-main": "sudo npm i -g webpack webpack-cli webpack-dev-server babel-cli path html-entities@1.3.1"
+    "install-main": "sudo npm i -g webpack webpack-cli webpack-dev-server babel-cli path html-entities@1.3.1",
+    "storybook": "./node_modules/.bin/start-storybook -p 6006",
+    "build-storybook": "./node_modules/.bin/build-storybook",
+    "prod-storybook": "node utils/storybook.js"
   },
   "author": "web@techart.ru",
   "license": "ISC",
@@ -21,6 +24,14 @@
     "@babel/eslint-parser": "^7.17.0",
     "@babel/polyfill": "^7.12.1",
     "@babel/preset-env": "^7.16.11",
+    "@storybook/addon-actions": "^6.5.9",
+    "@storybook/addon-essentials": "^6.5.9",
+    "@storybook/addon-interactions": "^6.5.9",
+    "@storybook/addon-links": "^6.5.9",
+    "@storybook/builder-webpack5": "^6.5.9",
+    "@storybook/html": "^6.5.9",
+    "@storybook/manager-webpack5": "^6.5.9",
+    "@storybook/testing-library": "^0.0.13",
     "@webtechart/tao-bem": "^1.3.0",
     "ansi-html": "^0.0.9",
     "assets-webpack-plugin": "^7.1.1",

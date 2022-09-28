@@ -1,6 +1,7 @@
 module.exports = {
 	docRoot: '../www',
 	buildPath: '../www/builds',
+	storybookBuildPath: '/storybook', // От docRoot
 	hotPort: 8889,
 	mainStyleType: 'postcss-scss',
 	mainTemplateType: 'blade',
