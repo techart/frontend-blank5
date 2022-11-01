@@ -1,6 +1,6 @@
 {
   "name": "tao-webpack",
-  "version": "5.9.1",
+  "version": "5.9.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -45,6 +45,7 @@
     "file-loader": "^6.2.0",
     "foundation-sites": "^6.7.4",
     "html-entities": "^2.3.3",
+    "html-loader": "^4.2.0",
     "image-webpack-loader": "^8.1.0",
     "less": "^4.1.2",
     "less-loader": "^10.2.0",
