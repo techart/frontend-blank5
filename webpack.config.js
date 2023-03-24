@@ -53,7 +53,6 @@ Plugins ************************************************************************
 **/
 
 var provideVariables = {
-	BEM: ['@webtechart/tao-bem', 'default'],
 	Vue: ['vue', 'default'],
 	$: 'jquery',
 	jQuery: 'jquery',
@@ -107,6 +106,7 @@ let cssLoader = {
 let cssProcessing = [
 	MiniCssExtractPlugin.loader,
 	cssLoader,
+	'postcss-loader',
 	'sass-loader'
 ];
 
@@ -155,7 +155,6 @@ let _exports = {
 		extensions: ['.js', '.vue', '.scss', '.less', '.css', '.sass'],
 		alias: {
 			'vue$': 'vue/dist/vue.esm.js',
-			'tao-bem': '@webtechart/tao-bem',
 			font: 'font',
 			'components-vue': path.resolve(__dirname, 'src/component-vue'),
 		},

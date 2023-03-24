@@ -99,9 +99,6 @@ module.exports = {
 
 		config.resolve = {
 			extensions: ['.js', '.vue', '.scss', '.less', '.css', '.sass'],
-			alias: {
-				'tao-bem': '@webtechart/tao-bem',
-			},
 			byDependency: {
 				style: {
 					mainFiles: ["custom"],
