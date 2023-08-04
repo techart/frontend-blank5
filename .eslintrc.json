@@ -1,16 +1,14 @@
 {
-	"parser": "@babel/eslint-parser",
-	"extends": "eslint:recommended",
 	"env": {
 		"browser": true,
-		"node": true,
-		"es6": true
+		"es2021": true,
+		"node": true
 	},
-	"globals": {
-		"BEM": true,
-		"Vue": true,
-		"$": true
-	},
+	"extends": [
+		"eslint:recommended"
+	],
+	"globals": {},
+	"parser": "@babel/eslint-parser",
 	"parserOptions": {
 		"env": "browser",
 		"ecmaVersion": 8,
@@ -20,8 +18,15 @@
 			"modules": true
 		}
 	},
+	"plugins": [],
 	"rules": {
 		"no-console": 0,
-		"indent": ["error", "tab", {"SwitchCase": 1}]
+		"indent": [
+			"error",
+			"tab",
+			{
+				"SwitchCase": 1
+			}
+		]
 	}
 }

@@ -6,9 +6,14 @@ const DirectoryNamedWebpackPlugin = require('directory-named-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const styleLintPlugin = require('stylelint-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
-const { VueLoaderPlugin } = require('vue-loader');
 const utils = require('./webpack/utils');
 const webpack = require('webpack');
+
+const
+	jsTestRE = /\.js$/,
+	cssTestRE = /\.(scss|sass|css)$/,
+	cssModuleTestRE = /\.module\.s?css$/
+;
 
 var env = process.env.NODE_ENV || 'dev';
 var production = env === 'prod';
@@ -49,14 +54,99 @@ Object.assign(stats, userSettings.stats);
 
 
 /**
+Addons *******************************************************************************************************************
+**/
+
+// Флаги рабьоты с доп.пакетами
+let
+	withAOS = false,
+	withBEM = false,
+	withGSAP = false,
+	withJquery = false,
+	withLess = false,
+	withReact = false,
+	withSwiper = false,
+	withStorybook = false,
+	withTS = false,
+	withVue = false
+;
+
+// Определяем наличие AOS в проекте
+try {
+	let aos = require('aos');
+	withAOS = !!aos;
+} catch {}
+
+// Определяем наличие tao-bem в проекте
+try {
+	let bem = fs.existsSync('./node_modules/@webtechart/tao-bem/lib/bem.js');
+	withBEM = !!bem;
+} catch {}
+
+// Определяем наличие GSAP в проекте
+try {
+	let gsap = require('gsap');
+	withGSAP = !!gsap;
+} catch {}
+
+// Определяем наличие jQuery в проекте
+try {
+	let jquery = require('jquery');
+	withJquery = !!jquery;
+} catch {}
+
+// Определяем наличие less в проекте
+try {
+	let less = require('less');
+	withLess = !!less;
+} catch {}
+
+// Определяем наличие React в проекте
+try {
+	let reactdom = require('react-dom');
+	withReact = !!reactdom;
+} catch {}
+
+// Определяем наличие swiper в проекте
+try {
+	let swiper = require('swiper');
+	withSwiper = !!swiper;
+} catch {}
+
+// Определяем наличие Storybook в проекте
+try {
+	let storybook = require('@storybook/core');
+	withStorybook = !!storybook;
+} catch {}
+
+// Определяем наличие Typescript в проекте
+try {
+	let ts = require('typescript');
+	withTS = !!ts;
+} catch {}
+
+// Определяем наличие Vue в проекте
+try {
+	let vue = require('vue');
+	withVue = !!vue;
+} catch {}
+
+
+/**
 Plugins ******************************************************************************************************************
 **/
 
-var provideVariables = {
-	Vue: ['vue', 'default'],
-	$: 'jquery',
-	jQuery: 'jquery',
-};
+var provideVariables = {};
+if (withBEM) {
+	provideVariables['BEM'] = ['@webtechart/tao-bem', 'default'];
+}
+if (withJquery) {
+	provideVariables['$'] = 'jquery';
+	provideVariables['jQuery'] = 'jquery';
+}
+if (withVue) {
+	provideVariables['Vue'] = ['vue', 'default'];
+}
 if (userSettings.providePlugin) {
 	provideVariables = Object.assign(provideVariables, userSettings.providePlugin);
 }
@@ -80,9 +170,12 @@ var plugins = [
 	}),
 	
 	new webpack.ProvidePlugin(provideVariables),
-	new VueLoaderPlugin(),
 	new ESLintPlugin({})
 ];
+if (withVue) {
+	const { VueLoaderPlugin } = require('vue-loader');
+	plugins.push(new VueLoaderPlugin());
+}
 
 /**
 Loaders ******************************************************************************************************************
@@ -100,7 +193,8 @@ let cssLoader = {
 				return false;
 			}
 			return true;
-		}
+		},
+		modules: false
 	}
 };
 let cssProcessing = [
@@ -118,7 +212,7 @@ let urlLoader = {
 	}
 };
 
-let lessLoader = {
+let lessLoader = withLess ? {
 	loader: 'less-loader',
 	options: {
 		sourceMap: true,
@@ -126,7 +220,7 @@ let lessLoader = {
 			paths: [path.resolve(__dirname, "src")],
 		},
 	},
-};
+} : null;
 
 let imageWebpackLoader = {
 	loader: 'image-webpack-loader',
@@ -152,11 +246,9 @@ let _exports = {
 		libraryExport: 'default',
 	},
 	resolve: {
-		extensions: ['.js', '.vue', '.scss', '.less', '.css', '.sass'],
+		extensions: ['.js', '.scss', '.css', '.sass'],
 		alias: {
-			'vue$': 'vue/dist/vue.esm.js',
 			font: 'font',
-			'components-vue': path.resolve(__dirname, 'src/component-vue'),
 		},
 		byDependency: {
 			style: {
@@ -165,9 +257,10 @@ let _exports = {
 		},
 		modules: [
 			path.join(__dirname, 'src'),
+			path.join(__dirname, 'src/style'),
+			path.join(__dirname, 'node_modules'),
 			'.',
 			'img',
-			path.join(__dirname, 'node_modules'),
 		],
 		plugins: [
 			new DirectoryNamedWebpackPlugin({
@@ -181,20 +274,12 @@ let _exports = {
 	module: {
 		rules: [
 			{
-				test: /\.vue$/,
-				use: ['vue-loader'],
-			},
-			{
-				test: /\.js$/,
+				test: jsTestRE,
 				exclude: /node_modules/,
 				use: ['babel-loader']
 			},
 			{
-				test: /\.less$/,
-				use : [MiniCssExtractPlugin.loader, cssLoader, lessLoader],
-			},
-			{
-				test: /\.(scss|sass|css)$/,
+				test: cssTestRE,
 				use : (userSettings.cssProcessing && (0 < userSettings.cssProcessing.length)) ? userSettings.cssProcessing : cssProcessing,
 			},
 			{
@@ -211,6 +296,35 @@ let _exports = {
 	plugins: plugins
 }
 
+
+// + Работа с tao-bem
+if (withBEM) {
+	_exports.resolve.alias['tao-bem'] = '@webtechart/tao-bem';
+}
+
+// + Работа с jQuery
+if (withJquery) {
+	_exports.module.rules.push({
+		test: require.resolve('jquery'),
+		loader: 'expose-loader',
+		options: {
+			exposes: {
+				globalName: '$',
+				override: true,
+			}
+		}
+	});
+	_exports.module.rules.push({
+		test: require.resolve('jquery'),
+		loader: 'expose-loader',
+		options: {
+			exposes: {
+				globalName: 'jQuery',
+				override: true,
+			}
+		}
+	});
+}
 if (userSettings.exposeGlobal) {
 	userSettings.exposeGlobal.forEach(function (item) {
 		_exports.module.rules.push({
@@ -223,6 +337,84 @@ if (userSettings.exposeGlobal) {
 				}
 			}
 		});
+	});
+}
+
+// + Работа с less
+if (lessLoader) {
+	_exports.resolve.extensions.push('.less');
+	_exports.module.rules.push({
+		test: /\.less$/,
+		use : [MiniCssExtractPlugin.loader, cssLoader, lessLoader],
+	});
+}
+
+// + Работа с React
+if (withReact) {
+	_exports.resolve.extensions.push('.jsx');
+	let
+		block = null,
+		jsBlock = null,
+		cssBlock = null
+	;
+	for (block of _exports.module.rules) {
+		if (jsTestRE === block.test) {
+			jsBlock = block;
+		}
+		if (cssTestRE === block.test) {
+			cssBlock = block;
+		}
+		if (jsBlock && cssBlock) {
+			break;
+		}
+	}
+	if (jsBlock) {
+		let index = _exports.module.rules.indexOf(jsBlock);
+		_exports.module.rules.splice(index, 1, {
+			test: /\.jsx?$/,
+			exclude: /node_modules/,
+			use: {
+				loader: 'babel-loader',
+				options: {
+					presets: ['@babel/preset-env', '@babel/preset-react']
+				}
+			}
+		});
+	}
+	if (cssBlock) {
+		let
+			index = _exports.module.rules.indexOf(cssBlock),
+			moduleBlock = JSON.parse(JSON.stringify(cssBlock))
+		;
+		moduleBlock.test = cssModuleTestRE;
+		moduleBlock.use[1].options.modules = {
+			mode: 'local',
+			localIdentName: '[folder]__[local]--[hash:base64:3]'
+		};
+		_exports.module.rules[index].exclude = cssModuleTestRE;
+		_exports.module.rules.splice(index + 1, 0, moduleBlock);
+	}
+}
+
+// + Работа с Typescript
+if (withTS) {
+	_exports.resolve.extensions.push('.ts');
+	_exports.resolve.extensions.push('.tsx');
+	_exports.module.rules.push({
+		test: /\.tsx?$/,
+		use: {
+			loader: 'ts-loader',
+		},
+	});
+}
+
+// + Работа с Vue
+if (withVue) {
+	_exports.resolve.extensions.push('.vue');
+	_exports.resolve.alias['vue$'] = 'vue/dist/vue.esm-bundler.js';
+	_exports.module.rules.push({
+		test: /\.vue$/,
+		use: ['vue-loader'],
 	});
 }
 

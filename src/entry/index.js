@@ -1,9 +1,2 @@
-import 'style/layout/work';
+import 'style/layout/base';
 import 'block/common';
-
-(function () {
-	"use strict";
-	$(function () {
-		//
-	})
-})();

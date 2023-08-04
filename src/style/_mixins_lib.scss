@@ -1,17 +1,85 @@
 @use "sass:list";
+@use "sass:map";
 @use "sass:string";
 
 // Это библиотечные миксины, их править и дополнять нельзя.
 // Свои миксины размещайте в файле _mixins_app.scss
 
+@mixin breakpoint($breakpoint) {
+	$width: 0;
+	$only: false;
+	$known: map.keys($breakpoints);
+	$keys: list.length($known);
+
+	@if type-of($breakpoint) == "list" {
+		$only: "only" == list.nth($breakpoint, 2);
+		$breakpoint: list.nth($breakpoint, 1);
+	}
+
+	@if map-has-key($breakpoints, $breakpoint) {
+		$width: #{map.get($breakpoints, $breakpoint)};
+	} @else if type-of($breakpoint) == "number" {
+		$width: #{$breakpoint};
+	}
+
+	@if 0 == $width {
+		@warn "Нет брейкпоинта #{"" + $breakpoint}. Доступные значения: #{$known}.";
+	} @else {
+		$width: add-unit($width, "px");
+		$conditions-block: "(min-width: #{$width})";
+
+		@if $only {
+			$next-index: list.index($known, $breakpoint) + 1;
+
+			@if $keys >= $next-index {
+				$next-key: list.nth($known, $next-index);
+
+				@if map.has-key($breakpoints, $next-key) {
+					$conditions-block: "#{$conditions-block} and (max-width: #{add-unit(map.get($breakpoints, $next-key) - 1, "px")})";
+				}
+			}
+		}
+
+		@media screen and #{$conditions-block} {
+			@content;
+		}
+	}
+}
+
 @mixin container() {
 	&__middle {
-		@include xy-grid-container;
+		box-sizing: border-box;
+		max-width: $global-width;
+		padding-left: calc(var(--container-gap) * 0.5);
+		padding-right: calc(var(--container-gap) * 0.5);
+
+		@each $key, $val in $breakpoints {
+			@media screen and (min-width: #{add-unit($val, "px")}) {
+				--container-gap: #{map.get($grid-gutter, $key)};
+			}
+		}
 	}
 
 	&__row {
-		@include xy-grid;
-		@include xy-gutters($negative: true);
+		box-sizing: border-box;
+		display: flex;
+		flex-flow: row wrap;
+		justify-content: center;
+		margin-left: calc(var(--container-gap) * -0.5);
+		margin-right: calc(var(--container-gap) * -0.5);
+		gap: var(--container-gap);
+		width: calc(100% + var(--container-gap));
+	}
+}
+
+@mixin container-grid($template-columns) {
+	display: grid;
+	grid-template-columns: $template-columns;
+
+	@each $key, $val in $breakpoints {
+		@media screen and (min-width: $val) {
+			gap: map.get($grid-gutter, $key);
+		}
 	}
 }
 
@@ -26,3 +94,39 @@
 		src: $src;
 	}
 }
+
+@function map-reverse($map) {
+	$result: null;
+
+	@if type-of($map) == "map" {
+		$keys: map.keys($map);
+		$map-reversed: ();
+
+		@for $i from length($keys) through 1 {
+			$map-reversed: map.merge(
+				$map-reversed,
+				(list.nth($keys, $i): map.get($map, list.nth($keys, $i)))
+			);
+		}
+
+		@if type-of($map-reversed) == "map" {
+			$result: $map-reversed;
+		}
+	}
+
+	@return $result;
+}
+
+@function add-unit($val, $unit) {
+	@if type-of($val) != "string" {
+		$val: #{$val};
+	}
+
+	@if null == string.index($val, $unit) {
+		$val: #{$val}#{$unit};
+	}
+
+	@return $val;
+}
+
+$reversed-breakpoints: map-reverse($breakpoints);

@@ -1,1 +1,0 @@
-require.context('img', true, /^\.\/.*\.(png|gif|jpe?g|svg)$/);
