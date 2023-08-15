@@ -15,6 +15,10 @@ const
 		"preview.scss": "@import \"style/style\";\n@include site-fonts;\n"
 	},
 
+	storybookUtils = {
+		"storybook.js": "const\n\tfs = require('fs'),\n\tpath = require('path'),\n\tstoriesPath = path.resolve(__dirname, '../src/stories')\n;\n\n\ntry {\n\tfs.accessSync(storiesPath);\n} catch (err) {\n\tconsole.log('Отсутствует каталог с историями Storybook - ' + storiesPath);\n\tprocess.exit();\n}\n\n\nconst\n\tstories = fs.opendirSync(storiesPath),\n\tentries = []\n;\nlet entry = null;\nwhile (entry = stories.readSync()) {\n\tif ('.gitkeep' !== entry.name) {\n\t\tentries.push(entry.name);\n\t}\n}\n\nif (0 === entries.length) {\n\tconsole.log('Отсутствуют истории Storybook - ' + storiesPath);\n\tprocess.exit();\n}\n\n\nconst\n\tuserSettings = require('../user.settings'),\n\t{ spawn } = require('child_process'),\n\tyarn = spawn(\n\t\t'yarn',\n\t\t[\n\t\t\t'build-storybook',\n\t\t\t'-o',\n\t\t\tpath.resolve(`${userSettings.docRoot + userSettings.storybookBuildPath}`),\n\t\t\t// '--debug-webpack',\n\t\t]\n\t)\n;\n\nyarn.stdout.on('data', (data) => {\n\tconsole.log(data.toString());\n});\n\nyarn.stderr.on('data', (data) => {\n\tconsole.log(data.toString());\n});\n\nyarn.on('error', (error) => {\n\tconsole.log(`error: ${error.message}`);\n});\n\nyarn.on('close', (code) => {\n\tconsole.log(`child process exited with code ${code}`);\n});\n"
+	},
+
 	package = lib.readRC("package.json", fs)
 ;
 
@@ -26,6 +30,8 @@ if (package) {
 	console.log('Добавляем сценарии работы со Storybook...');
 	Object.assign(package.scripts, storybookScripts);
 	lib.writeRC("package.json", package, fs);
+	console.log('Добавляем файл Storybook-утилиты...');
+	lib.makeFiles(storybookUtils, "utils", fs);
 }
 
 lib.makeDir(lib.STORYBOOK_DIR, fs);

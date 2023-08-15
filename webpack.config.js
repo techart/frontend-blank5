@@ -63,7 +63,7 @@ let
 	withBEM = false,
 	withGSAP = false,
 	withJquery = false,
-	withLess = false,
+	withMobX = false,
 	withReact = false,
 	withSwiper = false,
 	withStorybook = false,
@@ -95,10 +95,10 @@ try {
 	withJquery = !!jquery;
 } catch {}
 
-// Определяем наличие less в проекте
+// Определяем наличие MobX в проекте
 try {
-	let less = require('less');
-	withLess = !!less;
+	let mobx = require('mobx');
+	withMobX = !!mobx;
 } catch {}
 
 // Определяем наличие React в проекте
@@ -211,16 +211,6 @@ let urlLoader = {
 		name: '[path][name].[ext]',
 	}
 };
-
-let lessLoader = withLess ? {
-	loader: 'less-loader',
-	options: {
-		sourceMap: true,
-		lessOptions: {
-			paths: [path.resolve(__dirname, "src")],
-		},
-	},
-} : null;
 
 let imageWebpackLoader = {
 	loader: 'image-webpack-loader',
@@ -337,15 +327,6 @@ if (userSettings.exposeGlobal) {
 				}
 			}
 		});
-	});
-}
-
-// + Работа с less
-if (lessLoader) {
-	_exports.resolve.extensions.push('.less');
-	_exports.module.rules.push({
-		test: /\.less$/,
-		use : [MiniCssExtractPlugin.loader, cssLoader, lessLoader],
 	});
 }
 
