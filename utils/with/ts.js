@@ -5,7 +5,7 @@ const
 
 	tsConfig = {
 		"include": [
-			"src/react-components/**/*",
+			"src/component-react/**/*",
 		],
 		"exclude": [
 			"node_modules",

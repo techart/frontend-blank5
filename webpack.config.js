@@ -11,8 +11,15 @@ const webpack = require('webpack');
 
 const
 	jsTestRE = /\.js$/,
+	jsxTestRE = /\.jsx?$/,
+	tsxTestRE = /\.tsx?$/,
 	cssTestRE = /\.(scss|sass|css)$/,
-	cssModuleTestRE = /\.module\.s?css$/
+	cssModuleTestRE = /\.module\.s?css$/,
+	imgFullTestRE = /\.(png|gif|jpe?g|svg|cur)$/i,
+	imgLiteTestRE = /\.(png|gif|jpe?g|cur)$/i,
+	svgTestRE = /\.svg$/,
+	fontTestRE = /\.woff2?(\?\S*)?$/i,
+	vueTestRE = /\.vue$/
 ;
 
 var env = process.env.NODE_ENV || 'dev';
@@ -250,7 +257,6 @@ let _exports = {
 			path.join(__dirname, 'src/style'),
 			path.join(__dirname, 'node_modules'),
 			'.',
-			'img',
 		],
 		plugins: [
 			new DirectoryNamedWebpackPlugin({
@@ -273,12 +279,12 @@ let _exports = {
 				use : (userSettings.cssProcessing && (0 < userSettings.cssProcessing.length)) ? userSettings.cssProcessing : cssProcessing,
 			},
 			{
-				test: /\.(png|gif|jpe?g|svg|cur)$/i,
+				test: imgFullTestRE,
 				include: [path.resolve(__dirname, 'img'), path.resolve(__dirname, 'node_modules')],
 				use: [urlLoader, imageWebpackLoader],
 			},
 			{
-				test: /\.woff2?(\?\S*)?$/i,
+				test: fontTestRE,
 				use: [urlLoader],
 			},
 		]
@@ -336,7 +342,8 @@ if (withReact) {
 	let
 		block = null,
 		jsBlock = null,
-		cssBlock = null
+		cssBlock = null,
+		imgBlock = null
 	;
 	for (block of _exports.module.rules) {
 		if (jsTestRE === block.test) {
@@ -345,14 +352,17 @@ if (withReact) {
 		if (cssTestRE === block.test) {
 			cssBlock = block;
 		}
-		if (jsBlock && cssBlock) {
+		if (imgFullTestRE === block.test) {
+			imgBlock = block;
+		}
+		if (jsBlock && cssBlock && imgBlock) {
 			break;
 		}
 	}
 	if (jsBlock) {
 		let index = _exports.module.rules.indexOf(jsBlock);
 		_exports.module.rules.splice(index, 1, {
-			test: /\.jsx?$/,
+			test: jsxTestRE,
 			exclude: /node_modules/,
 			use: {
 				loader: 'babel-loader',
@@ -375,6 +385,20 @@ if (withReact) {
 		_exports.module.rules[index].exclude = cssModuleTestRE;
 		_exports.module.rules.splice(index + 1, 0, moduleBlock);
 	}
+	if (imgBlock) {
+		let
+			index = _exports.module.rules.indexOf(imgBlock)
+		;
+		_exports.module.rules[index].test = imgLiteTestRE;
+		_exports.module.rules.splice(index, 0, {
+			test: svgTestRE,
+			use: [
+				{
+					loader: '@svgr/webpack',
+				}
+			],
+		});
+	}
 }
 
 // + Работа с Typescript
@@ -382,7 +406,7 @@ if (withTS) {
 	_exports.resolve.extensions.push('.ts');
 	_exports.resolve.extensions.push('.tsx');
 	_exports.module.rules.push({
-		test: /\.tsx?$/,
+		test: tsxTestRE,
 		use: {
 			loader: 'ts-loader',
 		},
@@ -394,7 +418,7 @@ if (withVue) {
 	_exports.resolve.extensions.push('.vue');
 	_exports.resolve.alias['vue$'] = 'vue/dist/vue.esm-bundler.js';
 	_exports.module.rules.push({
-		test: /\.vue$/,
+		test: vueTestRE,
 		use: ['vue-loader'],
 	});
 }

@@ -6,10 +6,6 @@ const
 	// Дополнения к настройкам eslint
 	eslint = {
 		extends: ["plugin:react/recommended"],
-		parserOptions: {
-			"ecmaVersion": "latest",
-			"sourceType": "module"
-		},
 		plugins: [
 			"react"
 		]
@@ -83,8 +79,6 @@ if (eslintRC) {
 	console.log('Добавляем настройки eslint...');
 	// Добавялем пресет
 	eslintRC.extends = eslintRC.extends.concat(eslint.extends);
-	// Добавляем настройки парсера
-	Object.assign(eslintRC.parserOptions, eslint.parserOptions);
 	// Добавляем плагин
 	eslintRC.plugins = eslintRC.plugins.concat(eslint.plugins);
 	// Сохраняем новые настройки в файл настроек

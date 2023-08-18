@@ -8,10 +8,9 @@
 		"eslint:recommended"
 	],
 	"globals": {},
-	"parser": "@babel/eslint-parser",
 	"parserOptions": {
 		"env": "browser",
-		"ecmaVersion": 8,
+		"ecmaVersion": "latest",
 		"requireConfigFile": false,
 		"sourceType": "module",
 		"ecmaFeatures": {
