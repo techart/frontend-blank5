@@ -2,7 +2,6 @@ module.exports = {
 	docRoot: '../www',
 	buildPath: '../www/builds',
 	storybookBuildPath: '/storybook', // От docRoot
-	hotPort: 8889,
 	mainStyleType: 'postcss-scss',
 	mainTemplateType: 'blade',
 	entry: {
@@ -13,7 +12,7 @@ module.exports = {
 		// main: ['./src/page/main/main.js'],
 	},
 	stats: {},
-	https: true,
+	https: false,
 	images: {
 		bypassOnDebug: true,
 		gifsicle: {

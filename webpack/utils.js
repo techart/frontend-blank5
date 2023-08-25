@@ -3,27 +3,44 @@ const shell = require("child_process");
 const path = require("path");
 
 module.exports = {
-	hotHost: function () {
-		const userName = String(shell.execSync("whoami", {encoding: "utf8", timeout: 500})).trim();
-		let domain = userName + ".techart.intranet";
-		let resolve = shell.spawnSync("host", [domain], {encoding: "utf8", timeout: 500});
-		if(resolve.status !== 0) {
-			domain = "localhost";
+
+	hotPort: function () {
+		let node_version = process.env.HOSTNAME || '';
+
+		switch (node_version) {
+			case 'nodejs-8':
+				return 10120;
+
+			case 'nodejs-8-old':
+				return 10121;
+
+			case 'nodejs-14':
+				return 10140;
+
+			case 'nodejs-16':
+				return 10160;
+
+			case 'nodejs-18':
+			default:
+				return 10180;
 		}
-		return domain;
 	},
+
 	hotUrl: function () {
-		return (settings.https ? "https" : "http") + '://' + this.hotHost() + ":" + settings.hotPort;
+		return (settings.https ? "https" : "http") + '://localhost:' + this.hotPort();
 	},
-	publicPath: function(env) {
+
+	publicPath: function (env) {
 		env = env || "prod";
 		return this.buildPath(env).replace(path.resolve(settings.docRoot), "");
 	},
-	buildPath: function(env) {
+
+	buildPath: function (env) {
 		env = env || "prod";
 		if(env === "hot") {
 			env = "dev";
 		}
 		return path.resolve(settings.buildPath, env) + "/";
 	},
+
 };

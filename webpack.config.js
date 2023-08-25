@@ -459,27 +459,27 @@ Hot ****************************************************************************
 **/
 
 if (hot) {
-	_exports.output.publicPath = utils.hotUrl() + utils.publicPath('dev');
+	let
+		host = utils.hotUrl()
+	;
+	_exports.output.publicPath = host + utils.publicPath('dev');
 	_exports.devServer = {
-		publicPath: _exports.output.publicPath,
-		hot: true,
-		historyApiFallback: true,
-		stats: userSettings.stats,
-		port: userSettings.hotPort,
-		host: utils.hotHost(),
-		disableHostCheck: true,
-		https: {
-			key: fs.readFileSync('/opt/techart/projectclone/config/ssl/server.key'),
-			cert: fs.readFileSync('/opt/techart/projectclone/config/ssl/hot.crt'),
-			ca: fs.readFileSync('/opt/techart/projectclone/config/ssl/generate/rootCA.pem'),
-		},
+		allowedHosts: 'auto',
 		headers: {
 			"Access-Control-Allow-Origin": "*",
 			"Access-Control-Allow-Headers": "*",
 			"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 			"Access-Control-Allow-Credentials": "true",
 			"Access-Control-Expose-Headers": "*"
-		}
+		},
+		historyApiFallback: true,
+		host: '0.0.0.0',
+		port: 8889,
+		hot: true,
+		client: {
+			logging: 'verbose',
+			webSocketURL: host.replace('http', 'ws') + '/ws'
+		},
 	};
 }
 
