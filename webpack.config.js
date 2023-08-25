@@ -464,7 +464,7 @@ if (hot) {
 	;
 	_exports.output.publicPath = host + utils.publicPath('dev');
 	_exports.devServer = {
-		allowedHosts: 'auto',
+		allowedHosts: 'all',
 		headers: {
 			"Access-Control-Allow-Origin": "*",
 			"Access-Control-Allow-Headers": "*",
