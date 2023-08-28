@@ -389,14 +389,10 @@ if (withReact) {
 		let
 			index = _exports.module.rules.indexOf(imgBlock)
 		;
-		_exports.module.rules[index].test = imgLiteTestRE;
 		_exports.module.rules.splice(index, 0, {
 			test: svgTestRE,
-			use: [
-				{
-					loader: '@svgr/webpack',
-				}
-			],
+			issuer: /\.(jsx?|tsx?)$/,
+			use: ['@svgr/webpack'],
 		});
 	}
 }
