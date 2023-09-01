@@ -2,6 +2,7 @@ const userSettings = require('./user.settings');
 const path = require('path');
 const fs = require('fs');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const DirectoryNamedWebpackPlugin = require('directory-named-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const styleLintPlugin = require('stylelint-webpack-plugin');
@@ -289,7 +290,12 @@ let _exports = {
 			},
 		]
 	},
-	plugins: plugins
+	plugins: plugins,
+	optimization: {
+		minimizer: [
+			new CssMinimizerPlugin()
+		]
+	}
 }
 
 
