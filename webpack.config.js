@@ -476,6 +476,11 @@ if (hot) {
 			logging: 'verbose',
 			webSocketURL: host.replace('http', 'ws') + '/ws'
 		},
+		static: [
+			{
+				directory: path.resolve(userSettings.docRoot),
+			}
+		],
 	};
 }
 
