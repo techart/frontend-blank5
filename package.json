@@ -1,6 +1,6 @@
 {
 	"name": "tao-webpack",
-	"version": "5.13.4",
+	"version": "5.13.5",
 	"description": "",
 	"main": "index.js",
 	"scripts": {

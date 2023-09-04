@@ -293,7 +293,8 @@ let _exports = {
 	plugins: plugins,
 	optimization: {
 		minimizer: [
-			new CssMinimizerPlugin()
+			new CssMinimizerPlugin(),
+			'...'
 		]
 	}
 }
