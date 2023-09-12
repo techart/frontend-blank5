@@ -16,8 +16,7 @@ const
 	tsxTestRE = /\.tsx?$/,
 	cssTestRE = /\.(scss|sass|css)$/,
 	cssModuleTestRE = /\.module\.s?css$/,
-	imgFullTestRE = /\.(png|gif|jpe?g|svg|cur)$/i,
-	imgLiteTestRE = /\.(png|gif|jpe?g|cur)$/i,
+	imgFullTestRE = /\.(cur|gif|jpe?g|png|svg)$/i,
 	svgTestRE = /\.svg$/,
 	fontTestRE = /\.woff2?(\?\S*)?$/i,
 	vueTestRE = /\.vue$/
@@ -28,6 +27,8 @@ var production = env === 'prod';
 var hot = env === 'hot';
 
 var date = new Date();
+
+let ImageMinimizerWebpackPlugin = null;
 
 
 let filenameTemplate = function(template) {
@@ -70,6 +71,7 @@ let
 	withAOS = false,
 	withBEM = false,
 	withGSAP = false,
+	withIMWP = false,
 	withJquery = false,
 	withMobX = false,
 	withReact = false,
@@ -95,6 +97,12 @@ try {
 try {
 	let gsap = require('gsap');
 	withGSAP = !!gsap;
+} catch {}
+
+// Определяем наличие Image-Minimizer-Webpack-Plugin в проекте
+try {
+	ImageMinimizerWebpackPlugin = require('image-minimizer-webpack-plugin');
+	withIMWP = !!ImageMinimizerWebpackPlugin;
 } catch {}
 
 // Определяем наличие jQuery в проекте
@@ -212,18 +220,91 @@ let cssProcessing = [
 	'sass-loader'
 ];
 
-let urlLoader = {
-	loader: 'url-loader',
-	options: {
-		limit: userSettings.base64MaxFileSize,
-		name: '[path][name].[ext]',
-	}
-};
+let
+	minimizerQueue = [
+		// Работа с CSS: объединение и сортировка @media-запросов, "сжатие" чистого CSS
+		new CssMinimizerPlugin({
+			minify: [
+				async (data, inputMap, minimizerOptions) => {
+					const
+						postcss = require('postcss'),
 
-let imageWebpackLoader = {
-	loader: 'image-webpack-loader',
-	options: userSettings.images
-};
+						result = {
+							code: Object.values(data)[0],
+							map: inputMap,
+							warnings: [],
+							errors: [],
+						}
+					;
+
+					await postcss([
+						require('postcss-sort-media-queries')({
+							sort: 'mobile-first',
+						})])
+						.process(result.code, {from: Object.keys(data)[0]})
+						.then((output) => {
+							result.code = output.css;
+						})
+					;
+
+					return result;
+				},
+				CssMinimizerPlugin.cssnanoMinify,
+			],
+			minimizerOptions: [
+				{},
+				{},
+			]
+		}),
+
+		// Поддержка встроенного Terser плагина
+		'...',
+	]
+;
+
+// Работа с изображениями
+if (withIMWP) {
+	let
+		sharpOptions = {
+			avif: { lossless: true, },
+			git: {},
+			jpeg: { quality: 100, },
+			png: {},
+			webp: { lossless: true, },
+		},
+
+		svgoOptions = {
+			multipass: true,
+			plugins: ['preset-default'],
+		}
+	;
+
+	if ('undefined' !== typeof userSettings.images['sharp']) {
+		sharpOptions = Object.assign(sharpOptions, userSettings.images.sharp);
+	}
+
+	minimizerQueue.push(new ImageMinimizerWebpackPlugin({
+		minimizer: {
+			implementation: ImageMinimizerWebpackPlugin.sharpMinify,
+			options: {
+				encodeOptions: sharpOptions,
+			},
+		},
+	}));
+
+	if ('undefined' !== typeof userSettings.images['svgo']) {
+		svgoOptions = Object.assign(svgoOptions, userSettings.images.svgo);
+	}
+
+	minimizerQueue.push(new ImageMinimizerWebpackPlugin({
+		minimizer: {
+			implementation: ImageMinimizerWebpackPlugin.svgoMinify,
+			options: {
+				encodeOptions: svgoOptions,
+			},
+		},
+	}));
+}
 
 /**
 Exports ******************************************************************************************************************
@@ -244,7 +325,7 @@ let _exports = {
 		libraryExport: 'default',
 	},
 	resolve: {
-		extensions: ['.js', '.scss', '.css', '.sass'],
+		extensions: ['.css', '.js', '.sass', '.scss'],
 		alias: {
 			font: 'font',
 		},
@@ -281,21 +362,37 @@ let _exports = {
 			},
 			{
 				test: imgFullTestRE,
-				include: [path.resolve(__dirname, 'img'), path.resolve(__dirname, 'node_modules')],
-				use: [urlLoader, imageWebpackLoader],
+				include: [
+					path.resolve(__dirname, 'img'),
+					path.resolve(__dirname, 'node_modules'),
+				],
+				type: 'asset',
+				parser: {
+					dataUrlCondition: {
+						maxSize: ('undefined' !== typeof userSettings['base64MaxFileSize']) ? userSettings.base64MaxFileSize : 0,
+					},
+				},
+				generator: {
+					filename: '[path][hash][ext]',
+				},
 			},
 			{
 				test: fontTestRE,
-				use: [urlLoader],
+				type: 'asset/resource',
+				parser: {
+					dataUrlCondition: {
+						maxSize: 180000,
+					},
+				},
+				generator: {
+					filename: '[path][name][ext]',
+				},
 			},
 		]
 	},
 	plugins: plugins,
 	optimization: {
-		minimizer: [
-			new CssMinimizerPlugin(),
-			'...'
-		]
+		minimizer: minimizerQueue,
 	}
 }
 

@@ -14,19 +14,6 @@ module.exports = {
 	stats: {},
 	https: false,
 	images: {
-		bypassOnDebug: true,
-		gifsicle: {
-			interlaced: false,
-		},
-		optipng: {
-			optimizationLevel: 7,
-		},
-		pngquant: {
-			enabled: false,
-		},
-		mozjpeg: {
-			quality: 93,
-		},
 	},
 	base64MaxFileSize: 10000,
 	// Два следующих объекта использовать только в крайней необходимости
