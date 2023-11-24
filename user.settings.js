@@ -9,7 +9,7 @@ module.exports = {
 		// common: ['jquery'], // По умолчанию все общие части собираеются в файл index.js
 		index: ['./src/entry/index.js'],
 		// Пример создания дополнительной точки сборки
-		// main: ['./src/page/main/main.js'],
+		// main: ['./src/entry/main.js'],
 	},
 	stats: {},
 	https: false,

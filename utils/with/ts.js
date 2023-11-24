@@ -5,7 +5,7 @@ const
 
 	tsConfig = {
 		"include": [
-			"src/component-react/**/*",
+			"src/**/*",
 		],
 		"exclude": [
 			"node_modules",
@@ -17,8 +17,15 @@ const
 				"dom",
 				"es2017"
 			],
-			"jsx": "react",
-			"module": "ES6",
+			"typeRoots": [
+				"./node_modules/@types",
+				"src/component-react/types"
+			],
+			"types": [
+				"node"
+			],
+			"jsx": "react-jsx",
+			"module": "CommonJS",
 			"rootDir": "",
 			"outDir": "dist",
 			"esModuleInterop": true,
@@ -27,7 +34,13 @@ const
 			"baseUrl": ".",
 			"allowJs": true,
 			"isolatedModules": true,
-			"moduleResolution": "node16"
+			"alwaysStrict": true,
+			"noImplicitAny": true,
+			"strictNullChecks": true,
+			"strictPropertyInitialization": true,
+			"strictFunctionTypes": true,
+			"noImplicitThis": true,
+			"strictBindCallApply": true
 		}
 	}
 ;
