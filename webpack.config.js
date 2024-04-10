@@ -7,6 +7,7 @@ const DirectoryNamedWebpackPlugin = require('directory-named-webpack-plugin');
 const AssetsPlugin = require('assets-webpack-plugin');
 const styleLintPlugin = require('stylelint-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
+const CircularDependencyPlugin = require('circular-dependency-plugin');
 const utils = require('./webpack/utils');
 const webpack = require('webpack');
 
@@ -174,19 +175,24 @@ var plugins = [
 		emitWarning: true,
 		quiet: false,
 	}),
-	
+
 	new MiniCssExtractPlugin({
 		filename: userSettings.MiniCssExtractTemplate ? userSettings.MiniCssExtractTemplate : filenameTemplate('css/[name].css'),
 	}),
-	
+
 	new AssetsPlugin({
 		filename: path.join('assets', env + '.json'),
 		path: __dirname,
 		prettyPrint: true,
 	}),
-	
+
 	new webpack.ProvidePlugin(provideVariables),
-	new ESLintPlugin({})
+	new ESLintPlugin({}),
+	new CircularDependencyPlugin({
+		exclude: /node_modules/,
+		failOnError: true,
+		cwd: process.cwd(),
+	})
 ];
 if (withVue) {
 	const { VueLoaderPlugin } = require('vue-loader');
@@ -201,16 +207,18 @@ let cssLoader = {
 	loader: 'css-loader',
 	options: {
 		sourceMap: !production,
-		url: (url, resourcePath) => {
-			if (url.startsWith('/')) {
-				return false;
-			}
-			if (url.startsWith('../')) {
-				return false;
-			}
-			return true;
+		url: {
+			filter: (url, resourcePath) => {
+				if (url.startsWith('/')) {
+					return false;
+				}
+				if (url.startsWith('../')) {
+					return false;
+				}
+				return true;
+			},
 		},
-		modules: false
+		modules: "icss",
 	}
 };
 let cssProcessing = [
@@ -219,6 +227,30 @@ let cssProcessing = [
 	'postcss-loader',
 	'sass-loader'
 ];
+
+// Подключаем лоудер prettier
+if (userSettings.usePrettier && process.env.NODE_ENV === "dev") {
+    cssProcessing.push({
+        loader: path.resolve("./webpack/loaders/prettier.js"),
+		options: {
+			pathModules: /node_modules/g
+		}
+    });
+}
+
+const jsLoaders = [
+	'babel-loader'
+];
+
+// Подключаем лоудер prettier
+if (userSettings.usePrettier && process.env.NODE_ENV === "dev") {
+    jsLoaders.push({
+        loader: path.resolve("./webpack/loaders/prettier.js"),
+		options: {
+			pathModules: /node_modules/g
+		}
+    });
+}
 
 let
 	minimizerQueue = [
@@ -354,7 +386,7 @@ let _exports = {
 			{
 				test: jsTestRE,
 				exclude: /node_modules/,
-				use: ['babel-loader']
+				use: jsLoaders
 			},
 			{
 				test: cssTestRE,
@@ -503,13 +535,27 @@ if (withReact) {
 
 // + Работа с Typescript
 if (withTS) {
+	const loaders = [
+		{
+			loader: 'ts-loader'
+		}
+	];
+
+	// Подключаем prettier
+	if (userSettings.usePrettier && process.env.NODE_ENV === "dev") {
+		loaders.push({
+			loader: path.resolve("./webpack/loaders/prettier.js"),
+			options: {
+				pathModules: /node_modules/g
+			}
+		});
+	}
+
 	_exports.resolve.extensions.push('.ts');
 	_exports.resolve.extensions.push('.tsx');
 	_exports.module.rules.push({
 		test: tsxTestRE,
-		use: {
-			loader: 'ts-loader',
-		},
+		use: loaders
 	});
 }
 

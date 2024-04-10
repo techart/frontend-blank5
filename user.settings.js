@@ -2,6 +2,7 @@ module.exports = {
 	docRoot: '../www',
 	buildPath: '../www/builds',
 	storybookBuildPath: '/storybook', // От docRoot
+	usePrettier: false,
 	mainStyleType: 'postcss-scss',
 	mainTemplateType: 'blade',
 	entry: {

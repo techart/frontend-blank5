@@ -21,8 +21,11 @@ module.exports = {
 				return 10160;
 
 			case 'nodejs-18':
-			default:
 				return 10180;
+
+			case 'nodejs-20':
+			default:
+				return 10200;
 		}
 	},
 

@@ -1,0 +1,33 @@
+{
+    "tabWidth": 4,
+    "singleQuote": false,
+	"useTabs": true,
+    "endOfLine": "auto",
+    "semi": true,
+    "overrides": [
+        {
+            "files": "*.scss",
+            "options": {
+              "parser": "scss"
+            }
+        },
+		{
+            "files": "*.css",
+            "options": {
+              "parser": "css"
+            }
+        },
+        {
+            "files": "*.ts",
+            "options": {
+                "parser": "typescript"
+            }
+        },
+        {
+            "files": "*.js",
+            "options": {
+                "parser": "babel"
+            }
+        }
+    ]
+}
