@@ -3,6 +3,10 @@ const
 
 	fs = require('fs'),
 
+	withPacks = {
+		TS: false,
+	},
+
 	// Дополнения к настройкам eslint
 	eslint = {
 		extends: [
@@ -37,7 +41,12 @@ const
 	// Файлы для примера компонентов Vue
 	vueComponents = {
 		"app.js": "import { createApp } from 'vue';\n\nimport App from './banner';\n\ndocument.addEventListener('DOMContentLoaded', () => {\n\tconst app = createApp(App);\n\tapp.mount('#vue');\n});\n",
-		"banner.vue": "<template>\n\t<div>{{ message }}</div>\n</template>\n\n<script>\n\texport default {\n\t\tdata() {\n\t\t\treturn {\n\t\t\t\tmessage: 'Тестовый Vue-компонент!',\n\t\t\t}\n\t\t}\n\t}\n</script>\n"
+		"banner.vue": "<script setup>\n\timport { ref } from 'vue';\n\n\tconst message = ref('Тестовый Vue-компонент!');\n</script>\n\n<template>\n\t<div>{{ message }}</div>\n</template>\n",
+	},
+	vueComponentsTS = {
+		"app.js": "import { createApp } from 'vue';\n\nimport App from './banner';\n\ndocument.addEventListener('DOMContentLoaded', () => {\n\tconst app = createApp(App);\n\tapp.mount('#vue');\n});\n",
+		"banner.vue": "<script setup lang=\"ts\">\n\timport { ref } from 'vue'\n\n\tconst message = ref('Тестовый Vue-компонент!')\n</script>\n\n<template>\n\t<div>{{ message }}</div>\n</template>\n",
+		"vue-shims.d.ts": "declare module '*.vue' {\n\timport type { DefineComponent } from 'vue'\n\tconst component: DefineComponent<{}, {}, any>\n\texport default component\n}\n",
 	},
 
 	// Содержимое пользовательских настроек
@@ -49,17 +58,26 @@ const
 console.log('');
 
 
+// Определяем наличие Typescript в проекте
+try {
+	let ts = require('typescript');
+	withPacks.TS = !!ts;
+} catch {}
+
+
 // Если прочитали настройки eslint
 if (eslintRC) {
 	console.log('Добавляем настройки eslint...');
 	// Добавялем пресеты
-	eslintRC.extends = eslintRC.extends.concat(eslint.extends);
+	// eslintRC.extends = eslintRC.extends.concat(eslint.extends);
+	eslintRC.extends = lib.mergeUnique(eslintRC.extends, eslint.extends);
 	// Добавляем Vue в список глобальных переменных
 	Object.assign(eslintRC.globals, eslint.globals);
 	// Добавляем настройки парсера
 	Object.assign(eslintRC.parserOptions, eslint.parserOptions);
 	// Добавляем плагин
-	eslintRC.plugins = eslintRC.plugins.concat(eslint.plugins);
+	// eslintRC.plugins = eslintRC.plugins.concat(eslint.plugins);
+	eslintRC.plugins = lib.mergeUnique(eslintRC.plugins, eslint.plugins);
 	// Добавялем правила
 	Object.assign(eslintRC.rules, eslint.rules);
 	// Сохраняем новые настройки в файл настроек
@@ -102,5 +120,9 @@ if (settings &&
 
 	lib.makeDir(lib.VUE_DIR, fs);
 	console.log('Формируем файлы примера Vue-приложения...');
-	lib.makeFiles(vueComponents, lib.VUE_DIR, fs);
+	if (withPacks.TS) {
+		lib.makeFiles(vueComponentsTS, lib.VUE_DIR, fs);
+	} else {
+		lib.makeFiles(vueComponents, lib.VUE_DIR, fs);
+	}
 }

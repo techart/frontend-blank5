@@ -59,6 +59,15 @@ module.exports = {
 		}
 	},
 
-	makeFiles
+	makeFiles,
 
+	mergeUnique: (a, b) => {
+		let r = [...a];
+		for (let v of b) {
+			if (!r.includes(v)) {
+				r.push(v);
+			}
+		}
+		return r;
+	}
 };

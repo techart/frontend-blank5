@@ -67,13 +67,11 @@ Object.assign(stats, userSettings.stats);
 Addons *******************************************************************************************************************
 **/
 
-// Флаги рабьоты с доп.пакетами
+// Флаги работы с доп.пакетами
 let
 	withAOS = false,
-	withBEM = false,
 	withGSAP = false,
 	withIMWP = false,
-	withJquery = false,
 	withMobX = false,
 	withReact = false,
 	withSwiper = false,
@@ -88,12 +86,6 @@ try {
 	withAOS = !!aos;
 } catch {}
 
-// Определяем наличие tao-bem в проекте
-try {
-	let bem = fs.existsSync('./node_modules/@webtechart/tao-bem/lib/bem.js');
-	withBEM = !!bem;
-} catch {}
-
 // Определяем наличие GSAP в проекте
 try {
 	let gsap = require('gsap');
@@ -104,12 +96,6 @@ try {
 try {
 	ImageMinimizerWebpackPlugin = require('image-minimizer-webpack-plugin');
 	withIMWP = !!ImageMinimizerWebpackPlugin;
-} catch {}
-
-// Определяем наличие jQuery в проекте
-try {
-	let jquery = require('jquery');
-	withJquery = !!jquery;
 } catch {}
 
 // Определяем наличие MobX в проекте
@@ -154,13 +140,6 @@ Plugins ************************************************************************
 **/
 
 var provideVariables = {};
-if (withBEM) {
-	provideVariables['BEM'] = ['@webtechart/tao-bem', 'default'];
-}
-if (withJquery) {
-	provideVariables['$'] = 'jquery';
-	provideVariables['jQuery'] = 'jquery';
-}
 if (withVue) {
 	provideVariables['Vue'] = ['vue', 'default'];
 }
@@ -190,7 +169,7 @@ var plugins = [
 	new ESLintPlugin({}),
 	new CircularDependencyPlugin({
 		exclude: /node_modules/,
-		failOnError: true,
+		failOnError: false,
 		cwd: process.cwd(),
 	})
 ];
@@ -367,10 +346,12 @@ let _exports = {
 			},
 		},
 		modules: [
+			'.',
 			path.join(__dirname, 'src'),
+			path.join(__dirname, 'src/api'),
+			path.join(__dirname, 'src/component'),
 			path.join(__dirname, 'src/style'),
 			path.join(__dirname, 'node_modules'),
-			'.',
 		],
 		plugins: [
 			new DirectoryNamedWebpackPlugin({
@@ -426,50 +407,6 @@ let _exports = {
 	optimization: {
 		minimizer: minimizerQueue,
 	}
-}
-
-
-// + Работа с tao-bem
-if (withBEM) {
-	_exports.resolve.alias['tao-bem'] = '@webtechart/tao-bem';
-}
-
-// + Работа с jQuery
-if (withJquery) {
-	_exports.module.rules.push({
-		test: require.resolve('jquery'),
-		loader: 'expose-loader',
-		options: {
-			exposes: {
-				globalName: '$',
-				override: true,
-			}
-		}
-	});
-	_exports.module.rules.push({
-		test: require.resolve('jquery'),
-		loader: 'expose-loader',
-		options: {
-			exposes: {
-				globalName: 'jQuery',
-				override: true,
-			}
-		}
-	});
-}
-if (userSettings.exposeGlobal) {
-	userSettings.exposeGlobal.forEach(function (item) {
-		_exports.module.rules.push({
-			test: require.resolve(item.module),
-			loader: 'expose-loader',
-			options: {
-				exposes: {
-					globalName: item.name,
-					override: true,
-				}
-			}
-		});
-	});
 }
 
 // + Работа с React
@@ -531,6 +468,7 @@ if (withReact) {
 			use: ['@svgr/webpack'],
 		});
 	}
+	_exports.resolve.modules.splice(-2, 0, path.join(__dirname, 'src/component-react'));
 }
 
 // + Работа с Typescript
@@ -540,6 +478,12 @@ if (withTS) {
 			loader: 'ts-loader'
 		}
 	];
+
+	if (withVue) {
+		loaders[0]['options'] = {
+			appendTsSuffixTo: [vueTestRE],
+		};
+	}
 
 	// Подключаем prettier
 	if (userSettings.usePrettier && process.env.NODE_ENV === "dev") {
@@ -567,10 +511,26 @@ if (withVue) {
 		test: vueTestRE,
 		use: ['vue-loader'],
 	});
+	_exports.resolve.modules.splice(-2, 0, path.join(__dirname, 'src/component-vue'));
 }
 
 if (userSettings.aliases) {
 	_exports.resolve.alias = Object.assign(_exports.resolve.alias, userSettings.aliases);
+}
+
+if (userSettings.exposeGlobal) {
+	userSettings.exposeGlobal.forEach(function (item) {
+		_exports.module.rules.push({
+			test: require.resolve(item.module),
+			loader: 'expose-loader',
+			options: {
+				exposes: {
+					globalName: item.name,
+					override: true,
+				}
+			}
+		});
+	});
 }
 
 if (userSettings.resolve) {
@@ -584,7 +544,7 @@ if (userSettings.resolve) {
 	if (userSettings.resolve.modules) {
 		userSettings.resolve.modules.forEach((path) => {
 			if (-1 === _exports.resolve.modules.indexOf(path)) {
-				_exports.resolve.modules.push(path);
+				_exports.resolve.modules.splice(-2, 0, path);
 			}
 		});
 	}

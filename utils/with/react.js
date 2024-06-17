@@ -20,54 +20,91 @@ const
 	entryPoint = {
 		name: "react",
 		file: "src/entry/react.js",
-		content: "import 'component-react/app';\n"
+		content: "import 'component-react/apps';\n"
 	},
 
 	// Файлы для примера компонентов React
 	reactComponents = {
-		"api": {
-			"index.js": "// export { sendFeedbackRequest } from './forms/feedbackForm/index.jsx'"
+		"apps": {
+			"controllers": {
+				".gitkeep": ""
+			},
+			"hooks": {
+				".gitkeep": ""
+			},
+			"index.ts": "export { App } from './ui'",
+			"pages": {
+				".gitkeep": ""
+			},
+			"stores": {
+				".gitkeep": ""
+			},
+			"ui": {
+				"index.tsx": "import React from 'react'\n\nconst App: React.FC = () => {\n\treturn (\n\t\t<div>App example</div>\n\t)\n}\n\nexport { App }"
+			}
 		},
 		"components": {
-			"common": {
-				"modal": {
-					"index.jsx": "import React, { useEffect, useState } from 'react'\nimport PropTypes from 'prop-types'\n\n// import { ReactComponent as CloseIcon } from '../../../icons/close-popup.svg'\n\nimport styles from './index.module.scss'\n\nconst Modal = ({ popupContent, isVisible, changeModalState }) => {\n\tconst [content, setContent] = useState(null)\n\n\tconst closePopUp = () => {\n\t\tchangeModalState(false)\n\t}\n\n\tuseEffect(() => {\n\t\tconst escapeDownHandler = (e) => {\n\t\t\tif(e.key === 'Escape')\n\t\t\t\tchangeModalState(false)\n\t\t}\n\n\t\tdocument.addEventListener('keydown', escapeDownHandler)\n\n\t\treturn () => document.removeEventListener('keydown', escapeDownHandler)\n\t}, [changeModalState])\n\n\tuseEffect(() => {\n\t\tsetContent(popupContent)\n\t}, [popupContent])\n\n\tif(!isVisible)\n\t\treturn null\n\n\treturn (\n\t\t<div className={styles.root}>\n\t\t\t<div className={styles.bg} onClick={closePopUp}>\n\t\t\t\t<div className={styles.buttonWrapper}>\n\t\t\t\t\t<div className={styles.close} onClick={closePopUp}>\n\t\t\t\t\t\t{/* <CloseIcon /> */}\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<div className={styles.content}>\n\t\t\t\t{content}\n\t\t\t</div>\n\t\t</div>\n\n\t)\n}\n\nModal.propTypes = {\n\tpopupContent: PropTypes.element,\n\tisVisible: PropTypes.bool.isRequired,\n\tchangeModalState: PropTypes.func.isRequired,\n}\n\nexport default React.memo(Modal)\n",
-					"index.module.scss": ".root {\n\ttop: 0;\n\tleft: 0;\n\twidth: 100vw;\n\theight: calc(100vh - calc(100vh - 100%));\n\tposition: fixed;\n\tz-index: 999;\n}\n\n.bg {\n\tposition: relative;\n\tz-index: 2;\n\ttop: 0;\n\tleft: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: rgba(#000, 0.9);\n}\n\n.content {\n\tposition: absolute;\n\tz-index: 3;\n\ttop: 50%;\n\tleft: 50%;\n\ttransform: translate(-50%, -50%);\n\tdisplay: flex;\n\talign-items: center;\n\tjustify-content: center;\n\tmin-width: 340px;\n\tcolor: #fff;\n}\n\n.buttonWrapper {\n\tmax-width: 1440px;\n\tleft: 50%;\n\ttransform: translateX(-50%);\n\twidth: 100%;\n\ttop: 40px;\n\tposition: absolute;\n\tjustify-content: flex-end;\n\tdisplay: flex;\n\tz-index: 10;\n}\n\n.close {\n\twidth: 22px;\n\theight: 22px;\n\tcolor: #000;\n\tcursor: pointer;\n\tmargin-right: 20px;\n\n\tsvg {\n\t\tpath {\n\t\t\ttransition: fill 0.3s;\n\t\t\tfill: red;\n\t\t}\n\t}\n\n\t&:hover {\n\t\tsvg {\n\t\t\tpath {\n\t\t\t\tfill: red;\n\t\t\t}\n\t\t}\n\t}\n}\n"
-				},
-				"portal": {
-					"index.jsx": "import ReactDOM from 'react-dom'\nimport PropTypes from 'prop-types'\n\nconst Portal = ({ component, elemId }) => {\n\tconst container = document.getElementById(elemId)\n\treturn (\n\t\tReactDOM.createPortal(component, container)\n\t)\n}\n\nPortal.propTypes = {\n\tcomponent: PropTypes.element,\n\telemId: PropTypes.string.isRequired\n}\n\nexport default Portal"
-				}
+			"title": {
+				"index.module.scss": "@import \"~style\";\n",
+				"index.tsx": "import React from 'react'\n\nimport styles from './index.module.scss'\n\ntype CommonTitleT = {\n\tchildren: string,\n}\n\nconst Title: React.FC<CommonTitleT> = ({ children }) => {\n\treturn <h1 className={styles.root}>{children}</h1>\n}\n\nexport default React.memo(Title)"
 			}
 		},
 		"hooks": {
-			"useDynamicSvgImport.jsx": "import { useRef, useState, useEffect } from 'react'\n\nconst useDynamicSVGImport = (name) => {\n\tconst importedIconRef = useRef()\n\tconst [loading, setLoading] = useState(false)\n\tconst [error, setError] = useState()\n\tconst [data, setData] = useState(null)\n\n\tuseEffect(() => {\n\t\tsetLoading(true)\n\t\tconst importIcon = async () => {\n\t\t\ttry {\n\t\t\t\timportedIconRef.current = (await import(/* webpackMode: \"eager\" */ `!!@svgr/webpack?-svgo,+titleProp,+ref!../icons/${name}`)).default\n\t\t\t} catch (err) {\n\t\t\t\tsetError(err.message)\n\t\t\t\tconsole.error(err.message)\n\t\t\t} finally {\n\t\t\t\tsetData(importedIconRef.current)\n\t\t\t\tsetLoading(false)\n\t\t\t}\n\t\t};\n\t\timportIcon()\n\t}, [name])\n\n\n\treturn { error, loading, SvgIcon: data }\n}\n\nexport default useDynamicSVGImport\n",
-			"useFetch.jsx": "import { useEffect, useState } from 'react'\nimport { processRequestResult } from '../../../utils/utils.js'\n\nexport const fetchDo = async (url) => {\n\ttry {\n\t\tconst request = await fetch(url)\n\t\tconst data = await request.json()\n\t\treturn processRequestResult(data, 'ok')\n\t} catch (err) {\n\t\tconsole.error(`Ошибка запроса. Url: ${url}. Сообщение: ${err.message}`)\n\t\treturn processRequestResult({err: err.message}, 'error')\n\t}\n}\n\nexport const useFetch = (url) => {\n\tconst [data, setData] = useState(null)\n\tconst [loading, setLoading] = useState(false)\n\tconst [error, setError] = useState(null)\n\n\tuseEffect(() => {\n\t\tif(url) {\n\t\t\tconst controller = new AbortController()\n\t\t\tsetLoading(true)\n\n\t\t\tfetch(url, controller.signal)\n\t\t\t\t.then(response => response.json())\n\t\t\t\t.then(result => setData(result))\n\t\t\t\t.catch(err => {\n\t\t\t\t\tsetError(err.message)\n\t\t\t\t\tconsole.error(`Ошибка запроса. Url: ${url}. Сообщение: ${err.message}`)\n\t\t\t\t})\n\t\t\t\t.finally(() => setLoading(false))\n\n\t\t\treturn () => controller.abort()\n\t\t}\n\t}, [url])\n\n\treturn { data, loading, error }\n}\n",
-			"useModal.jsx": "import { useState } from 'react'\n\nconst useModal = () => {\n\tlet [modalState, setModalState] = useState(false)\n\tlet [modalComponent, setModalComponent] = useState(null)\n\n\treturn { modalState, setModalState, modalComponent, setModalComponent }\n}\n\nexport default useModal\n",
-			"useWindowDimensions.jsx": "import { useState, useEffect } from 'react'\nimport throttle from 'lodash/throttle'\n\nconst useWindowDimensions = () => {\n\tconst [size, setWindowSize] = useState({\n\t\twidth: window.innerWidth,\n\t\theight: window.innerHeight\n\t})\n\n\tuseEffect(() => {\n\t\tconst resizeHandler = throttle(e => {\n\t\t\tsetWindowSize({\n\t\t\t\twidth: e.target.innerWidth,\n\t\t\t\theight: e.target.innerWidth\n\t\t\t})\n\t\t}, 100)\n\n\t\twindow.addEventListener('resize', resizeHandler)\n\n\t\treturn () => {\n\t\t\twindow.removeEventListener('resize', resizeHandler)\n\t\t}\n\t}, [])\n\n\treturn size\n}\n\nexport default useWindowDimensions\n"
+			"useDynamicSvgImport.ts": "import { useRef, useState, useEffect } from 'react'\n\nconst useDynamicSVGImport = (name: string): object => {\n\tconst importedIconRef = useRef()\n\tconst [loading, setLoading] = useState(false)\n\tconst [error, setError] = useState()\n\tconst [data, setData] = useState<object | null>(null)\n\n\tuseEffect((): void => {\n\t\tsetLoading(true)\n\t\tconst importIcon = async (): Promise<void> => {\n\t\t\ttry {\n\t\t\t\timportedIconRef.current = (await import(/* webpackMode: \"eager\" */ `!!@svgr/webpack?-svgo,+titleProp,+ref!../icons/${name}`)).default\n\t\t\t} catch (err: any) {\n\t\t\t\tsetError(err.message)\n\t\t\t\tconsole.error(err.message)\n\t\t\t} finally {\n\t\t\t\tsetData(importedIconRef.current !== undefined ? importedIconRef.current : null);\n\t\t\t\tsetLoading(false)\n\t\t\t}\n\t\t};\n\t\timportIcon()\n\t}, [name])\n\n\n\treturn { error, loading, SvgIcon: data }\n}\n\nexport default useDynamicSVGImport\n",
+			"useLoadRecaptcha.ts": "import { useEffect } from 'react'\n\nconst useLoadRecaptcha = (googleKey: string): void => {\n\tuseEffect(() => {\n\t\tif(!(window as any).grecaptcha && !location.href.includes('techart')) {\n\t\t\tconst script = document.createElement(\"script\")\n\t\t\tscript.src = `https://www.google.com/recaptcha/api.js?render=${googleKey}`\n\t\t\tdocument.body.appendChild(script)\n\t\t}\n\t}, [])\n}\n\nexport default useLoadRecaptcha",
+			"useModal.ts": "import { useState } from 'react'\n\nconst useModal = (): object => {\n\tlet [modalState, setModalState] = useState(false)\n\tlet [modalComponent, setModalComponent] = useState(null)\n\n\treturn { modalState, setModalState, modalComponent, setModalComponent }\n}\n\nexport default useModal\n",
+			"useWindowDimensions.ts": "import { useState, useEffect } from 'react'\nimport throttle from 'lodash/throttle'\n\nconst useWindowDimensions = (): object => {\n\tconst [size, setWindowSize] = useState({\n\t\twidth: window.innerWidth,\n\t\theight: window.innerHeight\n\t})\n\n\tuseEffect(() => {\n\t\tconst resizeHandler = throttle((e: UIEvent)  => {\n\t\t\tconst w = e.target as Window\n\t\t\tsetWindowSize({\n\t\t\t\twidth: w.innerWidth,\n\t\t\t\theight: w.innerWidth\n\t\t\t})\n\t\t}, 100)\n\n\t\twindow.addEventListener('resize', resizeHandler)\n\n\t\treturn (): void => {\n\t\t\twindow.removeEventListener('resize', resizeHandler)\n\t\t}\n\t}, [])\n\n\treturn size\n}\n\nexport default useWindowDimensions\n"
 		},
 		"modules": {
-			"form": {
-				"store": {
-					"readme.txt": "Логика работы модуля\n"
+			"modal": {
+				"controller": {
+					"index.tsx": "const ModalController = (modalComponent = '') => {\n\tlet component = null\n\n\tswitch (modalComponent) {\n\t\tcase 'sendCheckWord':\n\t\t\tcomponent = <div>компонент1</div>\n\t\t\tbreak\n\t\tcase 'сhangePassword':\n\t\t\tcomponent = <div>компонент2</div>\n\t\t\tbreak\n\t\tdefault:\n\t\t\tcomponent = modalComponent\n\t\t\tbreak\n\t}\n\n\treturn component\n\n}\n\nexport default ModalController"
+				},
+				"index.ts": "export { Modal } from './ui'",
+				"lib": {
+					"Store.ts": "import { makeAutoObservable } from 'mobx'\n\nimport ModalController from '../controller'\n\nclass ModalStore {\n\tmodalState: boolean = false\n\tmodalComponent: any = null\n\n\tconstructor() {\n\t\tthis.changeModalComponent = this.changeModalComponent.bind(this)\n\t\tthis.changeModalState = this.changeModalState.bind(this)\n\t\tmakeAutoObservable(this)\n\t}\n\n\tchangeModalState(state: boolean) {\n\t\tthis.modalState = state\n\t}\n\n\tchangeModalComponent(component: any) {\n\t\tthis.modalComponent = ModalController(component)\n\t}\n}\n\nconst Store = new ModalStore()\nexport default Store"
 				},
 				"ui": {
-					"index.jsx": "import React, { useContext } from 'react'\nimport { useForm } from \"react-hook-form\"\nimport { useFetch, fetchDo } from '../../../hooks/useFetch'\n\n// Импорт контекста\nimport { ModalContext } from '../../../app'\n\nimport styles from './index.module.css'\n\n// import { sendFeedbackRequest } from '../../../api/index'\n\nconst FeedbackForm = () => {\n\tconst { register, handleSubmit, formState: { errors } } = useForm()\n\n\t// Будем использовать 2 функции из контекста\n\tconst { setModalState, setModalComponent } = useContext(ModalContext);\n\t\n\t// Пример хука для получения данных\n\tconst { requestData, loading, error } = useFetch('https://jsonplaceholder.typicode.com/posts/1')\n\n\tconst onSubmit = (data) => {\n\t\tconsole.log(data)\n\t\t// использование функций контекста\n\t\tsetModalComponent(<div>Модальное окно ответ</div>)\n\t\tsetModalState(true)\n\t}\n\n\tconst clickHandler = async() => {\n\t\tconst data = await fetchDo('https://jsonplaceholder.typicode.com/posts/1')\n\t\tconsole.log(data)\n\t}\n\n\tif(loading)\n\t\treturn <div>Loading</div>\n\n\tif(error)\n\t\treturn <div>Error</div>\n\n\treturn (\n\t\t/* \"handleSubmit\" will validate your inputs before invoking \"onSubmit\" */\n\t\t<form onSubmit={handleSubmit(onSubmit)} className={styles.root}>\n\t\t\t{/* register your input into the hook by invoking the \"register\" function */}\n\t\t\t<input className={styles.input} defaultValue=\"test\" {...register(\"example\")} />\n\t\t\t{/* include validation with required or other standard HTML validation rules */}\n\t\t\t<input className={styles.input} {...register(\"exampleRequired\", { required: true })} />\n\t\t\t{/* errors will return when field validation fails  */}\n\t\t\t{errors.exampleRequired && <span>This field is required</span>}\n\t\t\t<div className={styles.testClick} onClick={clickHandler}>fetch</div>\n\t\t\t<input className={styles.testSubmit} type=\"submit\" />\n\t\t</form>\n\t)\n}\n\nexport default FeedbackForm\n",
-					"index.module.css": ".root {\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: green;\n\tpadding: 15px;\n}\n\n.input {\n\tborder: 1px solid gray;\n}\n\n.testClick {\n\tmax-width: 40px;\n\tbackground-color: gray;\n\tmargin: 10px 0;\n\tcursor: pointer;\n}\n\n.testSubmit {\n\tbackground-color: gray;\n\tcursor: pointer;\n}\n",
-					"readme.txt": "Представление\n"
+					"index.module.scss": "@import \"~style\";\n\n.root {\n\ttop: 0;\n\tleft: 0;\n\twidth: 100vw;\n\theight: calc(100vh - calc(100vh - 100%));\n\tposition: fixed;\n\tz-index: 999;\n}\n\n.bg {\n\tposition: relative;\n\tz-index: 2;\n\ttop: 0;\n\tleft: 0;\n\twidth: 100%;\n\theight: 100%;\n\topacity: 0.5;\n\tbackground-color: black;\n}\n\n.content {\n\tposition: absolute;\n\tz-index: 3;\n\ttop: 50%;\n\tleft: 50%;\n\ttransform: translate(-50%, -50%);\n\tdisplay: flex;\n\talign-items: center;\n\tjustify-content: center;\n\tmin-width: 340px;\n\tcolor: #fff;\n}\n\n.buttonWrapper {\n\tmax-width: 1440px;\n\tleft: 50%;\n\ttransform: translateX(-50%);\n\twidth: 100%;\n\ttop: 40px;\n\tposition: absolute;\n\tjustify-content: flex-end;\n\tdisplay: flex;\n\tz-index: 10;\n}\n\n.close {\n\twidth: 22px;\n\theight: 22px;\n\tcolor: #000;\n\tcursor: pointer;\n\tmargin-right: 20px;\n\n\tsvg {\n\t\tpath {\n\t\t\ttransition: fill 0.3s;\n\t\t\tfill: red;\n\t\t}\n\t}\n\n\t&:hover {\n\t\tsvg {\n\t\t\tpath {\n\t\t\t\tfill: red;\n\t\t\t}\n\t\t}\n\t}\n}\n",
+					"index.tsx": "import { createRoot } from 'react-dom/client'\nimport { observer } from 'mobx-react-lite'\n\nimport Store from '../lib/Store'\n\nimport styles from './index.module.scss'\nimport { useCallback } from 'react'\n\nconst Modal = observer(() => {\n\tconst { modalState, modalComponent, changeModalState } = Store\n\n\tconst closeModal = useCallback(() => {\n\t\tchangeModalState(false)\n\t}, [])\n\n\tif(!modalState)\n\t\treturn null\n\n\treturn (\n\t\t<div className={styles.root}>\n\t\t\t<div className={styles.bg} onClick={closeModal}>\n\t\t\t\t<div className={styles.buttonWrapper}>\n\t\t\t\t\t<div className={styles.close} onClick={closeModal}>\n\t\t\t\t\t\tX\n\t\t\t\t\t\t{/* <CloseIcon /> */}\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<div className={styles.content}>\n\t\t\t\t{modalComponent}\n\t\t\t</div>\n\t\t</div>\n\n\t)\n})\n\ndocument.addEventListener('DOMContentLoaded', () => {\n\tconst root = createRoot(document.getElementById('modal') as HTMLElement)\n\troot.render(<Modal />)\n})\n\nexport { Modal }"
 				}
-			},
-			"readme.txt": "Модули с инкапуслированной бизнеслогикой\n"
+			}
 		},
-		"app.jsx": "import React, { createContext } from 'react'\nimport { createRoot } from 'react-dom/client'\n\nimport useModal from './hooks/useModal'\n\nimport Portal from './components/common/portal'\nimport ModalComponent from './components/common/modal'\nimport FeedbackForm from './modules/form/ui/index'\n\n// Объявляем контекст(после заполнения контекста, его можно будет импортировать в любом месте и использовать)\nexport const ModalContext = createContext({})\n\n// Примеры того, как можно организовывать реакт компоненты/приложения\n\nconst App = () => {\n\tconst { modalState, setModalState, modalComponent, setModalComponent } = useModal()\n\t\n\treturn (\n\t\t<ModalContext.Provider value={{ modalState, setModalState, modalComponent, setModalComponent }}>\n\t\t\t<FeedbackForm/>\n\t\t\t<Portal component={<ModalComponent isVisible={modalState} changeModalState={setModalState} popupContent={modalComponent} />} elemId={'portal'} />\n\t\t</ModalContext.Provider>\n\t)\n}\n\n \ndocument.addEventListener('DOMContentLoaded', () => {\n\t// Пример обёртки приложения в контекст с доступом к модалке (context react)\n\tconst root = createRoot(document.getElementById('react'))\n\n\troot.render(<App />)\n})\n"
+		"types": {
+			"declaration.d.ts": "declare module '*.scss'\ndeclare module '*.module.scss'\ndeclare module '*.svg'"
+		}
 	},
 	reactUtils = {
-		"utils.d.ts": "declare module 'utils'\n",
-		"utils.js": "const processRequestResult = (data, status) => {\n\treturn {\n\t\tstatus: status,\n\t\tpayload: data\n\t}\n}\n\nexport { processRequestResult }\n"
+		"react": {
+			"stubs": {
+				"api.js": "const createInterfaceStub = (name) => {\n\treturn `export interface ${name}ApiI {\n\n}`\n}\n\nconst createApiStub = (name) => {\n\treturn `import axios from 'axios'\n\nimport { ${name}ApiI } from './types'\nimport { ResponseT } from 'api/types'\n\nclass ${name}Api implements ${name}ApiI {\n\tinstance = axios.create({\n\t\tbaseURL: '/api/',\n\t\ttimeout: 5000,\n\t\theaders: {\n\t\t\t'Content-Type': 'application/json'\n\t\t}\n\t})\n\n\tconstructor() {\n\t}\n}\n\nconst instance = new ${name}()\nexport default instance`\n}\n\nmodule.exports = { createApiStub, createInterfaceStub }",
+				"app.js": "const createAppStub = (name) => {\n\treturn `import React from 'react'\n\nconst ${name}: React.FC = () => {\n\treturn (\n\t\t<div>\n\t\t\t${name}\n\t\t</div>\n\t)\n}\n\ndocument.addEventListener('DOMContentLoaded', () => {\n\tconst root = createRoot(document.getElementById('${name}') as HTMLElement)\n\troot.render(<${name} />)\n})\n\nexport { ${name} }\n`\n}\n\nmodule.exports = createAppStub",
+				"common.js": "const createCommonStub = (name) => {\n\treturn `import React from 'react'\n\nimport styles from './index.module.scss'\n\nconst ${name}: React.FC = () => {\n\treturn (\n\t\t<div className={styles.root}>\n\t\t\t${name}\n\t\t</div>\n\t)\n}\n\nexport { ${name} }\n`\n}\n\nmodule.exports = createCommonStub",
+				"mobxStore.js": "const createMobxStoreStub = (name) => {\n\treturn `import { makeAutoObservable } from 'mobx'\n\nimport { ${name}StoreI } from './types'\n\nclass ${name}Store implements ${name}StoreI {\n\n\tconstructor() {\n\t\tmakeAutoObservable(this, {}, { autoBind: true })\n\t}\n}\n\nconst store = new ${name}Store()\nexport default store`\n}\n\nconst createNamedMobxStoreStub = (name) => {\n\treturn `import { makeAutoObservable } from 'mobx'\n\nimport { ${name}StoreI } from './types'\n\nclass ${name}Store implements ${name}StoreI {\n\n\tconstructor() {\n\t\tmakeAutoObservable(this, {}, { autoBind: true })\n\t}\n}\n\nexport default ${name}Store`\n}\n\nmodule.exports = { createMobxStoreStub, createNamedMobxStoreStub }",
+				"mobxStoreInterface.js": "const createMobxStoreInterfaceStub = () => {\n\treturn `export interface RootStoreI {\n\n}`\n}\n\nconst createNamedMobxStoreInterfaceStub = (name) => {\n\treturn `export interface ${name}StoreI {\n\n}\\n\\n`\n}\n\nmodule.exports = { createMobxStoreInterfaceStub, createNamedMobxStoreInterfaceStub }",
+				"module.js": "const createModuleStub = (name) => {\n\treturn `import React from 'react'\n\nconst ${name}: React.FC = () => {\n\treturn (\n\t\t<div>\n\t\t\t${name}\n\t\t</div>\n\t)\n}\n\nexport { ${name} }\n`\n}\n\nmodule.exports = createModuleStub",
+				"reExport.js": "const reExportStub = (name) => {\n\treturn `export { ${name} } from './ui'`\n}\n\nmodule.exports = reExportStub",
+				"styles.js": "const createStylesStub = () => {\n\treturn `@import \"~style\";\n\n.root {\n\t//\n}`\n}\n\nmodule.exports = createStylesStub"
+			},
+			"tools.js": "const fs = require('fs')\n\nconst pathToReactComponents = 'src/component-react/'\nconst pathToCommonBlocks = 'src/block/common-blocks'\n\nconst createModule = (name) => {\n\tconst reExportStub = require('./stubs/reExport.js')\n\tconst createModuleStub = require('./stubs/module.js')\n\n\tconsole.clear()\n\n\tif(!name)\n\t\treturn console.error('\\x1b[41m', 'Введите имя модуля', '\\x1b[0m')\n\n\tconst path = `${pathToReactComponents}modules/`\n\tfs.mkdirSync(`${path}${name}/lib`, { recursive: true })\n\tfs.mkdirSync(`${path}${name}/ui`, { recursive: true })\n\tfs.mkdirSync(`${path}${name}/store`, { recursive: true })\n\n\ttry {\n\t\tfs.writeFileSync(`${path}${name}/index.tsx`, reExportStub(name))\n\t\tfs.writeFileSync(`${path}${name}/ui/index.tsx`, createModuleStub(name))\n\t} catch (err) {\n\t\tconsole.error(err)\n\t}\n\n\treturn console.log(`Module ${name} successfully created. Path: ${path}${name}`)\n}\n\nconst removeModule = (name) => {\n\tconst path = `${pathToReactComponents}modules/`\n\n\tfs.rmSync(`${path}${name}`, { recursive: true, force: true })\n\n\tconsole.log(`Module ${name} successfully removed. Path: ${path}${name}`)\n}\n\nconst createApp = (name) => {\n\tconst reExportStub = require('./stubs/reExport.js')\n\tconst createAppStub = require('./stubs/app.js')\n\n\tconsole.clear()\n\n\tif(!name)\n\t\treturn console.error('\\x1b[41m', 'Введите имя App', '\\x1b[0m')\n\n\tconst path = `${pathToReactComponents}apps/`\n\tfs.mkdirSync(`${path}${name}/lib`, { recursive: true })\n\tfs.mkdirSync(`${path}${name}/ui`, { recursive: true })\n\tfs.mkdirSync(`${path}${name}/store`, { recursive: true })\n\tfs.mkdirSync(`${path}${name}/controllers`, { recursive: true })\n\tfs.mkdirSync(`${path}${name}/pages`, { recursive: true })\n\n\ttry {\n\t\tfs.writeFileSync(`${path}${name}/index.tsx`, reExportStub(name))\n\t\tfs.writeFileSync(`${path}${name}/ui/index.tsx`, createAppStub(name))\n\t} catch (err) {\n\t\tconsole.error(err)\n\t}\n\n\treturn console.log(`App ${name} successfully created. Path: ${path}${name}`)\n}\n\nconst removeApp = (name) => {\n\tconst path = `${pathToReactComponents}apps/`\n\n\tfs.rmSync(`${path}${name}`, { recursive: true, force: true })\n\n\tconsole.log(`App ${name} successfully removed. Path: ${path}${name}`)\n}\n\nconst createComponent = (name) => {\n\tconst createCommonStub = require('./stubs/common.js')\n\tconst createStylesStub = require('./stubs/styles.js')\n\n\tconsole.clear()\n\n\tif(!name)\n\t\treturn console.error('\\x1b[41m', 'Введите имя компонента', '\\x1b[0m')\n\n\tconst path = `${pathToReactComponents}components/`\n\tfs.mkdirSync(`${path}${name}`, { recursive: true })\n\n\ttry {\n\t\tfs.writeFileSync(`${path}${name}/index.tsx`, createCommonStub(name))\n\t\tfs.writeFileSync(`${path}${name}/index.module.scss`, createStylesStub(name))\n\t} catch (err) {\n\t\tconsole.error(err)\n\t}\n\n\treturn console.log(`Component ${name} successfully created. Path: ${path}${name}`)\n}\n\nconst createMobxStore = (path, name) => {\n\tconst mobxStores = require('./stubs/mobxStore.js')\n\tconst mobxStoreInterfaces = require('./stubs/mobxStoreInterface.js')\n\n\tif(!path)\n\t\treturn console.error('\\x1b[41m', 'Введите путь, где необходимо создать Mobx Store', '\\x1b[0m')\n\n\tconst pathAndName = path.split('/')\n\tconst pathForWrite = `${pathToReactComponents}${pathAndName[0]}/`\n\n\ttry {\n\t\tif(!name) {\n\t\t\tfs.writeFileSync(`${pathForWrite}${pathAndName.at(-1)}/store/index.ts`, mobxStores.createMobxStoreStub('Root'))\n\t\t\tfs.writeFileSync(`${pathForWrite}${pathAndName.at(-1)}/store/types.ts`, mobxStoreInterfaces.createMobxStoreInterfaceStub('Root'))\n\t\t} else {\n\t\t\tfs.writeFileSync(`${pathForWrite}${pathAndName.at(-1)}/store/${name}Store.ts`, mobxStores.createNamedMobxStoreStub(name))\n\t\t\tfs.appendFileSync(`${pathForWrite}${pathAndName.at(-1)}/store/types.ts`, mobxStoreInterfaces.createNamedMobxStoreInterfaceStub(name))\n\t\t}\n\t} catch(err) {\n\t\tconsole.error(err)\n\t}\n}\n\nconst createCasesString = (arr) => {\n\tlet result = ''\n\n\tarr.forEach((e, i) => {\n\t\tresult += `${i > 0 ? '\\n\\t\\t\\t' : ''}case '${e.block}':`\n\n\t\te.files.forEach(paths => {\n\t\t\tresult += `\\n\\t\\t\\t\\timport(/* webpackMode: \"eager\" */ 'src/block/common-blocks/${e.block}/${paths}')`\n\t\t})\n\n\t\tresult += '\\n\\t\\t\\t\\tbreak;'\n\t})\n\n\treturn result\n}\n\nconst createFileContent = (arr) => {\n\tconst cases = createCasesString(arr)\n\n\treturn `const importCommonBlocks = (arr) => {\n\tarr.forEach(async e => {\n\t\tswitch(e) {\n\t\t\t${cases}\n\t\t}\n\t})\n}\n\nexport { importCommonBlocks }`\n}\n\nconst updateImporterPaths = () => {\n\tif(!fs.existsSync(pathToCommonBlocks))\n\t\treturn console.error('\\x1b[46m', `Отстутствует директория: ${pathToCommonBlocks}`, '\\x1b[0m')\n\n\tconst path = require('path')\n\n\tconst blocks = fs.readdirSync(pathToCommonBlocks, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)\n\n\tif(blocks.length === 0)\n\t\treturn console.error('\\x1b[46m', `Отстутствуют блоки в директории: ${pathToCommonBlocks}`, '\\x1b[0m')\n\n\tconst blocksData = []\n\n\tblocks.forEach(e => {\n\t\tconst files = fs.readdirSync(`${pathToCommonBlocks}/${e}/`, { withFileTypes: true }).map(dirent => dirent.name)\n\n\t\tconst obj = {\n\t\t\tblock: e,\n\t\t\tfiles: []\n\t\t}\n\n\t\tfiles.forEach(file => {\n\t\t\tif(path.extname(file) !== '.php')\n\t\t\t\tobj.files.push(file)\n\t\t})\n\n\t\tblocksData.push(obj)\n\t})\n\n\tconst result = createFileContent(blocksData)\n\n\tfs.writeFileSync('src/component/importer.js', result)\n\n\tconsole.log('\\x1b[36m', `\\n\\n${result}\\n\\n`, '\\x1b[0m')\n}\n\nconst createApi = (name) => {\n\tconst api = require('./stubs/api.js')\n\n\tconsole.clear()\n\n\tconst path = 'src/api/'\n\n\tif(!name)\n\t\treturn console.error('\\x1b[41m', 'Введите имя компонента', '\\x1b[0m')\n\n\tfs.mkdirSync(`${path}${name}`, { recursive: true })\n\n\ttry {\n\t\tfs.writeFileSync(`${path}${name}/index.ts`, api.createApiStub(name))\n\t\tfs.writeFileSync(`${path}${name}/types.ts`, api.createInterfaceStub(name))\n\t\tfs.writeFileSync(`${path}${name}/actions.ts`, '')\n\t} catch (err) {\n\t\tconsole.error(err)\n\t}\n\n\treturn console.log(`Api ${name} successfully created. Path: ${path}${name}`)\n}\n\nmodule.exports = { createModule, removeModule, createApp, removeApp, createComponent, createMobxStore, updateImporterPaths, createApi }\n"
+		}
+	},
+	reactScripts = {
+		"createModule": "run-func utils/react/tools.js createModule",
+		"removeModule": "run-func utils/react/tools.js removeModule",
+		"createApp": "run-func utils/react/tools.js createApp",
+		"removeApp": "run-func utils/react/tools.js removeApp",
+		"createComponent": "run-func utils/react/tools.js createComponent",
+		"createMobxStore": "run-func utils/react/tools.js createMobxStore",
+		"updateImporter": "run-func utils/react/tools.js updateImporterPaths",
+		"createApi": "run-func utils/react/tools.js createApi"
 	},
 
 	// Содержимое пользовательских настроек
 	settings = require("../../user.settings"),
-	settingLines = fs.readFileSync(lib.USER_SETTINGS_FILE, "utf-8").split("\n")
+	settingLines = fs.readFileSync(lib.USER_SETTINGS_FILE, "utf-8").split("\n"),
+
+	package = lib.readRC("package.json", fs)
 ;
 
 
@@ -78,9 +115,11 @@ console.log('');
 if (eslintRC) {
 	console.log('Добавляем настройки eslint...');
 	// Добавялем пресет
-	eslintRC.extends = eslintRC.extends.concat(eslint.extends);
+	// eslintRC.extends = eslintRC.extends.concat(eslint.extends);
+	eslintRC.extends = lib.mergeUnique(eslintRC.extends, eslint.extends);
 	// Добавляем плагин
-	eslintRC.plugins = eslintRC.plugins.concat(eslint.plugins);
+	// eslintRC.plugins = eslintRC.plugins.concat(eslint.plugins);
+	eslintRC.plugins = lib.mergeUnique(eslintRC.plugins, eslint.plugins);
 	// Сохраняем новые настройки в файл настроек
 	lib.writeRC(lib.ESLINT_RC_FILE, eslintRC, fs);
 }
@@ -88,7 +127,7 @@ if (eslintRC) {
 
 // Если прочитали настройки stylelint
 if (stylelintRC) {
-	console.log('Исправляем настройки stylelint для испоьзования CSS-модулей...');
+	console.log('Исправляем настройки stylelint для использования CSS-модулей...');
 	// Убираем шаблон для имён классов
 	stylelintRC.rules['selector-class-pattern'] = null;
 	// Сохраняем новые настройки в файл настроек
@@ -134,4 +173,10 @@ if (settings &&
 	lib.makeFiles(reactComponents, lib.REACT_DIR, fs);
 	console.log('Добавляем файлы React-утилит...');
 	lib.makeFiles(reactUtils, "utils", fs);
+}
+
+if (package) {
+	console.log('Добавляем сценарии работы с утилитами для React...');
+	Object.assign(package.scripts, reactScripts);
+	lib.writeRC("package.json", package, fs);
 }
