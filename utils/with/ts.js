@@ -29,6 +29,13 @@ const
 			"types": [
 				"node"
 			],
+			"paths": {
+				"api/*": ["src/api/*"],
+				"apps/*": ["src/component-react/apps/*"],
+				"components/*": ["src/component-react/components/*"],
+				"hooks/*": ["src/component-react/hooks/*"],
+				"modules/*": ["src/component-react/modules/*"],
+			},
 			"allowJs": true,
 			"allowSyntheticDefaultImports": true,
 			"alwaysStrict": true,
@@ -71,6 +78,9 @@ const
 			"typeRoots": [
 				"./node_modules/@types",
 			],
+			"paths": {
+				"api/*": ["src/api/*"],
+			},
 			"noEmit": false,
 			"allowJs": true,
 			"allowSyntheticDefaultImports": true,
@@ -110,6 +120,9 @@ const
 				"./node_modules/@types",
 				"src/types"
 			],
+			"paths": {
+				"api/*": ["src/api/*"],
+			},
 			"allowJs": true,
 			"allowSyntheticDefaultImports": true,
 			"alwaysStrict": true,
