@@ -30,56 +30,32 @@
 		$conditions-block: "(min-width: #{$width})";
 
 		@if $only {
-			$next-index: list.index($known, $breakpoint) + 1;
+			$next-key: 0;
 
-			@if $keys >= $next-index {
-				$next-key: list.nth($known, $next-index);
+			@if map.has-key($breakpoints, $breakpoint) {
+				$next-index: list.index($known, $breakpoint) + 1;
 
-				@if map.has-key($breakpoints, $next-key) {
-					$conditions-block: "#{$conditions-block} and (max-width: #{add-unit(map.get($breakpoints, $next-key) - 1, "px")})";
+				@if $keys >= $next-index {
+					$next-key: list.nth($known, $next-index);
 				}
+			} @else {
+				@each $key in $known {
+					@if $next-key == 0 {
+						@if map.get($breakpoints, $key) > $breakpoint {
+							$next-key: $key;
+						}
+					}
+				}
+			}
+
+			@if map.has-key($breakpoints, $next-key) {
+				$additional-rule: "(max-width: #{add-unit(map.get($breakpoints, $next-key) - 1, "px")})";
+				$conditions-block: "#{$conditions-block} and #{$additional-rule}";
 			}
 		}
 
 		@media screen and #{$conditions-block} {
 			@content;
-		}
-	}
-}
-
-@mixin container() {
-	&__middle {
-		box-sizing: border-box;
-		max-width: $global-width;
-		padding-left: calc(var(--container-gap) * 0.5);
-		padding-right: calc(var(--container-gap) * 0.5);
-
-		@each $key, $val in $breakpoints {
-			@media screen and (min-width: #{add-unit($val, "px")}) {
-				--container-gap: #{map.get($grid-gutter, $key)};
-			}
-		}
-	}
-
-	&__row {
-		box-sizing: border-box;
-		display: flex;
-		flex-flow: row wrap;
-		justify-content: center;
-		margin-left: calc(var(--container-gap) * -0.5);
-		margin-right: calc(var(--container-gap) * -0.5);
-		gap: var(--container-gap);
-		width: calc(100% + var(--container-gap));
-	}
-}
-
-@mixin container-grid($template-columns) {
-	display: grid;
-	grid-template-columns: $template-columns;
-
-	@each $key, $val in $breakpoints {
-		@media screen and (min-width: $val) {
-			gap: map.get($grid-gutter, $key);
 		}
 	}
 }
@@ -96,38 +72,14 @@
 	}
 }
 
-@function map-reverse($map) {
-	$result: null;
-
-	@if meta.type-of($map) == "map" {
-		$keys: map.keys($map);
-		$map-reversed: ();
-
-		@for $i from list.length($keys) through 1 {
-			$map-reversed: map.merge(
-				$map-reversed,
-				(list.nth($keys, $i): map.get($map, list.nth($keys, $i)))
-			);
-		}
-
-		@if meta.type-of($map-reversed) == "map" {
-			$result: $map-reversed;
-		}
-	}
-
-	@return $result;
-}
-
 @function add-unit($val, $unit) {
 	@if meta.type-of($val) != "string" {
 		$val: #{$val};
 	}
 
-	@if null == string.index($val, $unit) {
+	@if null == string.index($val, $unit) and $val != "0" {
 		$val: #{$val}#{$unit};
 	}
 
 	@return $val;
 }
-
-$reversed-breakpoints: map-reverse($breakpoints);
