@@ -8,6 +8,7 @@ const AssetsPlugin = require('assets-webpack-plugin');
 const styleLintPlugin = require('stylelint-webpack-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const utils = require('./webpack/utils');
 const webpack = require('webpack');
 
@@ -176,6 +177,14 @@ var plugins = [
 if (withVue) {
 	const { VueLoaderPlugin } = require('vue-loader');
 	plugins.push(new VueLoaderPlugin());
+}
+if (production &&
+	userSettings.useBundleAnalyzer) {
+	plugins.push(new BundleAnalyzerPlugin({
+		analyzerMode: 'static',
+		reportFilename: path.join(__dirname, 'bundle.html'),
+		openAnalyzer: false,
+	}));
 }
 
 /**
@@ -520,13 +529,16 @@ if (userSettings.aliases) {
 
 if (userSettings.exposeGlobal) {
 	userSettings.exposeGlobal.forEach(function (item) {
+		let
+			overrideValue = ('undefined' !== typeof item['override']) ? item.override : true
+		;
 		_exports.module.rules.push({
 			test: require.resolve(item.module),
 			loader: 'expose-loader',
 			options: {
 				exposes: {
 					globalName: item.name,
-					override: true,
+					override: overrideValue,
 				}
 			}
 		});

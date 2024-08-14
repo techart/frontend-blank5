@@ -35,6 +35,7 @@ const
 				"components/*": ["src/component-react/components/*"],
 				"hooks/*": ["src/component-react/hooks/*"],
 				"modules/*": ["src/component-react/modules/*"],
+				"style/*": ["src/component-react/style/*"],
 			},
 			"allowJs": true,
 			"allowSyntheticDefaultImports": true,

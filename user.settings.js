@@ -26,5 +26,6 @@ module.exports = {
 	resolve: {},
 	module: {},
 	output: {},
-	cssProcessing: []
+	cssProcessing: [],
+	useBundleAnalyzer: true
 };
