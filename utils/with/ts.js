@@ -20,6 +20,7 @@ const
 			"lib": [
 				"es7",
 				"dom",
+				"dom.iterable",
 				"es2018"
 			],
 			"typeRoots": [
@@ -75,6 +76,7 @@ const
 			"lib": [
 				"es7",
 				"dom",
+				"dom.iterable",
 				"es2018"
 			],
 			"typeRoots": [
@@ -117,6 +119,7 @@ const
 			"lib": [
 				"es7",
 				"dom",
+				"dom.iterable",
 				"es2018"
 			],
 			"typeRoots": [

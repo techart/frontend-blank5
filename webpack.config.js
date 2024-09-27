@@ -43,6 +43,8 @@ let filenameTemplate = function(template) {
 			+ '-' + date.getSeconds().toString().padStart(2, '0')
 			+ '-' + date.getMilliseconds().toString().padStart(3, '0')
 			+ '/' + template;
+	} else if (userSettings.useTimestampInDevMode) {
+		template = template.replace('[name].', `[name].${date.getTime()}.`);
 	}
 	return template;
 };
@@ -209,11 +211,19 @@ let cssLoader = {
 		modules: "icss",
 	}
 };
+let sassLoader = {
+	loader: 'sass-loader',
+	options: {
+		sassOptions: {
+			silenceDeprecations: ['legacy-js-api'],
+		},
+	}
+};
 let cssProcessing = [
 	MiniCssExtractPlugin.loader,
 	cssLoader,
 	'postcss-loader',
-	'sass-loader'
+	sassLoader,
 ];
 
 // Подключаем лоудер prettier
@@ -343,6 +353,7 @@ let _exports = {
 		devtoolModuleFilenameTemplate: '[absolute-resource-path]',
 		devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]',
 		libraryExport: 'default',
+		clean: !production,
 	},
 	resolve: {
 		extensions: ['.css', '.js', '.sass', '.scss'],
