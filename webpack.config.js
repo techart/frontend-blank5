@@ -211,19 +211,11 @@ let cssLoader = {
 		modules: "icss",
 	}
 };
-let sassLoader = {
-	loader: 'sass-loader',
-	options: {
-		sassOptions: {
-			silenceDeprecations: ['legacy-js-api'],
-		},
-	}
-};
 let cssProcessing = [
 	MiniCssExtractPlugin.loader,
 	cssLoader,
 	'postcss-loader',
-	sassLoader,
+	'sass-loader',
 ];
 
 // Подключаем лоудер prettier

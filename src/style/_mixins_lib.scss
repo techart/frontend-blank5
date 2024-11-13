@@ -2,6 +2,7 @@
 @use "sass:map";
 @use "sass:meta";
 @use "sass:string";
+@use "config" as *;
 
 // Это библиотечные миксины, их править и дополнять нельзя.
 // Свои миксины размещайте в файле _mixins_app.scss
