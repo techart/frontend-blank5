@@ -3,5 +3,5 @@ function requireAll(r) {
 }
 
 requireAll(
-	require.context(".", true, /^\.\/[^/]+\/[^/.]+\.(js|css|scss|sass|less)$/),
+	require.context(".", true, /^\.\/[^/]+\/[^/.]+\.(js|css|scss|sass|less)$/)
 );

@@ -1,19 +1,18 @@
-const userSettings = require('./user.settings');
-const path = require('path');
-const fs = require('fs');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
-const DirectoryNamedWebpackPlugin = require('directory-named-webpack-plugin');
-const AssetsPlugin = require('assets-webpack-plugin');
-const styleLintPlugin = require('stylelint-webpack-plugin');
-const ESLintPlugin = require('eslint-webpack-plugin');
-const CircularDependencyPlugin = require('circular-dependency-plugin');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const utils = require('./webpack/utils');
-const webpack = require('webpack');
+const userSettings = require("./user.settings");
+const path = require("path");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const DirectoryNamedWebpackPlugin = require("directory-named-webpack-plugin");
+const AssetsPlugin = require("assets-webpack-plugin");
+const styleLintPlugin = require("stylelint-webpack-plugin");
+const ESLintPlugin = require("eslint-webpack-plugin");
+const CircularDependencyPlugin = require("circular-dependency-plugin");
+const BundleAnalyzerPlugin =
+	require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+const utils = require("./webpack/utils");
+const webpack = require("webpack");
 
-const
-	jsTestRE = /\.js$/,
+const jsTestRE = /\.js$/,
 	jsxTestRE = /\.jsx?$/,
 	tsxTestRE = /\.tsx?$/,
 	cssTestRE = /\.(scss|sass|css)$/,
@@ -21,30 +20,37 @@ const
 	imgFullTestRE = /\.(cur|gif|jpe?g|png|svg)$/i,
 	svgTestRE = /\.svg$/,
 	fontTestRE = /\.woff2?(\?\S*)?$/i,
-	vueTestRE = /\.vue$/
-;
+	vueTestRE = /\.vue$/;
 
-var env = process.env.NODE_ENV || 'dev';
-var production = env === 'prod';
-var hot = env === 'hot';
+var env = process.env.NODE_ENV || "dev";
+var production = env === "prod";
+var hot = env === "hot";
 
 var date = new Date();
 
 let ImageMinimizerWebpackPlugin = null;
 
-
-let filenameTemplate = function(template) {
+let filenameTemplate = function (template) {
 	if (production) {
-		return date.getFullYear()
-			+ '/' + (date.getMonth() + 1).toString().padStart(2, '0')
-			+ '-' + date.getDate().toString().padStart(2, '0')
-			+ '/' + date.getHours().toString().padStart(2, '0')
-			+ '-' + date.getMinutes().toString().padStart(2, '0')
-			+ '-' + date.getSeconds().toString().padStart(2, '0')
-			+ '-' + date.getMilliseconds().toString().padStart(3, '0')
-			+ '/' + template;
+		return (
+			date.getFullYear() +
+			"/" +
+			(date.getMonth() + 1).toString().padStart(2, "0") +
+			"-" +
+			date.getDate().toString().padStart(2, "0") +
+			"/" +
+			date.getHours().toString().padStart(2, "0") +
+			"-" +
+			date.getMinutes().toString().padStart(2, "0") +
+			"-" +
+			date.getSeconds().toString().padStart(2, "0") +
+			"-" +
+			date.getMilliseconds().toString().padStart(3, "0") +
+			"/" +
+			template
+		);
 	} else if (userSettings.useTimestampInDevMode) {
-		template = template.replace('[name].', `[name].${date.getTime()}.`);
+		template = template.replace("[name].", `[name].${date.getTime()}.`);
 	}
 	return template;
 };
@@ -65,78 +71,92 @@ let stats = {
 };
 Object.assign(stats, userSettings.stats);
 
-
 /**
 Addons *******************************************************************************************************************
 **/
 
 // Флаги работы с доп.пакетами
-let
-	withAOS = false,
-	withGSAP = false,
+let _withAOS = false,
+	_withGSAP = false,
 	withIMWP = false,
-	withMobX = false,
+	_withMobX = false,
 	withReact = false,
-	withSwiper = false,
-	withStorybook = false,
+	_withSwiper = false,
+	_withStorybook = false,
 	withTS = false,
-	withVue = false
-;
+	withVue = false;
 
 // Определяем наличие AOS в проекте
 try {
-	let aos = require('aos');
-	withAOS = !!aos;
-} catch {}
+	let aos = require("aos");
+	_withAOS = !!aos;
+} catch {
+	// ...
+}
 
 // Определяем наличие GSAP в проекте
 try {
-	let gsap = require('gsap');
-	withGSAP = !!gsap;
-} catch {}
+	let gsap = require("gsap");
+	_withGSAP = !!gsap;
+} catch {
+	// ...
+}
 
 // Определяем наличие Image-Minimizer-Webpack-Plugin в проекте
 try {
-	ImageMinimizerWebpackPlugin = require('image-minimizer-webpack-plugin');
+	ImageMinimizerWebpackPlugin = require("image-minimizer-webpack-plugin");
 	withIMWP = !!ImageMinimizerWebpackPlugin;
-} catch {}
+} catch {
+	// ...
+}
 
 // Определяем наличие MobX в проекте
 try {
-	let mobx = require('mobx');
-	withMobX = !!mobx;
-} catch {}
+	let mobx = require("mobx");
+	_withMobX = !!mobx;
+} catch {
+	// ...
+}
 
 // Определяем наличие React в проекте
 try {
-	let reactdom = require('react-dom');
+	let reactdom = require("react-dom");
 	withReact = !!reactdom;
-} catch {}
+} catch {
+	// ...
+}
 
 // Определяем наличие swiper в проекте
 try {
-	let swiper = require('swiper');
-	withSwiper = !!swiper;
-} catch {}
+	let swiper = require("swiper");
+	_withSwiper = !!swiper;
+} catch {
+	// ...
+}
 
 // Определяем наличие Storybook в проекте
 try {
-	let storybook = require('@storybook/core');
-	withStorybook = !!storybook;
-} catch {}
+	let storybook = require("@storybook/core");
+	_withStorybook = !!storybook;
+} catch {
+	// ...
+}
 
 // Определяем наличие Typescript в проекте
 try {
-	let ts = require('typescript');
+	let ts = require("typescript");
 	withTS = !!ts;
-} catch {}
+} catch {
+	// ...
+}
 
 // Определяем наличие Vue в проекте
 try {
-	let vue = require('vue');
+	let vue = require("vue");
 	withVue = !!vue;
-} catch {}
-
+} catch {
+	// ...
+}
 
 /**
 Plugins ******************************************************************************************************************
@@ -144,10 +164,13 @@ Plugins ************************************************************************
 
 var provideVariables = {};
 if (withVue) {
-	provideVariables['Vue'] = ['vue', 'default'];
+	provideVariables["Vue"] = ["vue", "default"];
 }
 if (userSettings.providePlugin) {
-	provideVariables = Object.assign(provideVariables, userSettings.providePlugin);
+	provideVariables = Object.assign(
+		provideVariables,
+		userSettings.providePlugin
+	);
 }
 
 var plugins = [
@@ -159,11 +182,13 @@ var plugins = [
 	}),
 
 	new MiniCssExtractPlugin({
-		filename: userSettings.MiniCssExtractTemplate ? userSettings.MiniCssExtractTemplate : filenameTemplate('css/[name].css'),
+		filename: userSettings.MiniCssExtractTemplate
+			? userSettings.MiniCssExtractTemplate
+			: filenameTemplate("css/[name].css"),
 	}),
 
 	new AssetsPlugin({
-		filename: path.join('assets', env + '.json'),
+		filename: path.join("assets", env + ".json"),
 		path: __dirname,
 		prettyPrint: true,
 	}),
@@ -174,19 +199,20 @@ var plugins = [
 		exclude: /node_modules/,
 		failOnError: false,
 		cwd: process.cwd(),
-	})
+	}),
 ];
 if (withVue) {
-	const { VueLoaderPlugin } = require('vue-loader');
+	const { VueLoaderPlugin } = require("vue-loader");
 	plugins.push(new VueLoaderPlugin());
 }
-if (production &&
-	userSettings.useBundleAnalyzer) {
-	plugins.push(new BundleAnalyzerPlugin({
-		analyzerMode: 'static',
-		reportFilename: path.join(__dirname, 'bundle.html'),
-		openAnalyzer: false,
-	}));
+if (production && userSettings.useBundleAnalyzer) {
+	plugins.push(
+		new BundleAnalyzerPlugin({
+			analyzerMode: "static",
+			reportFilename: path.join(__dirname, "bundle.html"),
+			openAnalyzer: false,
+		})
+	);
 }
 
 /**
@@ -194,138 +220,129 @@ Loaders ************************************************************************
 **/
 
 let cssLoader = {
-	loader: 'css-loader',
+	loader: "css-loader",
 	options: {
 		sourceMap: !production,
 		url: {
-			filter: (url, resourcePath) => {
-				if (url.startsWith('/')) {
+			filter: (url, _resourcePath) => {
+				if (url.startsWith("/")) {
 					return false;
 				}
-				if (url.startsWith('../')) {
+				if (url.startsWith("../")) {
 					return false;
 				}
 				return true;
 			},
 		},
 		modules: "icss",
-	}
+	},
 };
 let cssProcessing = [
 	MiniCssExtractPlugin.loader,
 	cssLoader,
-	'postcss-loader',
-	'sass-loader',
+	"postcss-loader",
+	"sass-loader",
 ];
 
 // Подключаем лоудер prettier
 if (userSettings.usePrettier && process.env.NODE_ENV === "dev") {
-    cssProcessing.push({
-        loader: path.resolve("./webpack/loaders/prettier.js"),
+	cssProcessing.push({
+		loader: path.resolve("./webpack/loaders/prettier.js"),
 		options: {
-			pathModules: /node_modules/g
-		}
-    });
+			pathModules: /node_modules/g,
+		},
+	});
 }
 
-const jsLoaders = [
-	'babel-loader'
-];
+const jsLoaders = ["babel-loader"];
 
 // Подключаем лоудер prettier
 if (userSettings.usePrettier && process.env.NODE_ENV === "dev") {
-    jsLoaders.push({
-        loader: path.resolve("./webpack/loaders/prettier.js"),
+	jsLoaders.push({
+		loader: path.resolve("./webpack/loaders/prettier.js"),
 		options: {
-			pathModules: /node_modules/g
-		}
-    });
+			pathModules: /node_modules/g,
+		},
+	});
 }
 
-let
-	minimizerQueue = [
-		// Работа с CSS: объединение и сортировка @media-запросов, "сжатие" чистого CSS
-		new CssMinimizerPlugin({
-			minify: [
-				async (data, inputMap, minimizerOptions) => {
-					const
-						postcss = require('postcss'),
+let minimizerQueue = [
+	// Работа с CSS: объединение и сортировка @media-запросов, "сжатие" чистого CSS
+	new CssMinimizerPlugin({
+		minify: [
+			async (data, inputMap, _minimizerOptions) => {
+				const postcss = require("postcss"),
+					result = {
+						code: Object.values(data)[0],
+						map: inputMap,
+						warnings: [],
+						errors: [],
+					};
 
-						result = {
-							code: Object.values(data)[0],
-							map: inputMap,
-							warnings: [],
-							errors: [],
-						}
-					;
+				await postcss([
+					require("postcss-sort-media-queries")({
+						sort: "mobile-first",
+					}),
+				])
+					.process(result.code, { from: Object.keys(data)[0] })
+					.then((output) => {
+						result.code = output.css;
+					});
 
-					await postcss([
-						require('postcss-sort-media-queries')({
-							sort: 'mobile-first',
-						})])
-						.process(result.code, {from: Object.keys(data)[0]})
-						.then((output) => {
-							result.code = output.css;
-						})
-					;
+				return result;
+			},
+			CssMinimizerPlugin.cssnanoMinify,
+		],
+		minimizerOptions: [{}, {}],
+	}),
 
-					return result;
-				},
-				CssMinimizerPlugin.cssnanoMinify,
-			],
-			minimizerOptions: [
-				{},
-				{},
-			]
-		}),
-
-		// Поддержка встроенного Terser плагина
-		'...',
-	]
-;
+	// Поддержка встроенного Terser плагина
+	"...",
+];
 
 // Работа с изображениями
 if (withIMWP) {
-	let
-		sharpOptions = {
-			avif: { lossless: true, },
+	let sharpOptions = {
+			avif: { lossless: true },
 			git: {},
-			jpeg: { quality: 100, },
+			jpeg: { quality: 100 },
 			png: {},
-			webp: { lossless: true, },
+			webp: { lossless: true },
 		},
-
 		svgoOptions = {
 			multipass: true,
-			plugins: ['preset-default'],
-		}
-	;
+			plugins: ["preset-default"],
+		};
 
-	if ('undefined' !== typeof userSettings.images['sharp']) {
+	if ("undefined" !== typeof userSettings.images["sharp"]) {
 		sharpOptions = Object.assign(sharpOptions, userSettings.images.sharp);
 	}
 
-	minimizerQueue.push(new ImageMinimizerWebpackPlugin({
-		minimizer: {
-			implementation: ImageMinimizerWebpackPlugin.sharpMinify,
-			options: {
-				encodeOptions: sharpOptions,
+	minimizerQueue.push(
+		new ImageMinimizerWebpackPlugin({
+			minimizer: {
+				implementation: ImageMinimizerWebpackPlugin.sharpMinify,
+				options: {
+					encodeOptions: sharpOptions,
+				},
 			},
-		},
-	}));
+		})
+	);
 
-	if ('undefined' !== typeof userSettings.images['svgo']) {
+	if ("undefined" !== typeof userSettings.images["svgo"]) {
 		svgoOptions = Object.assign(svgoOptions, userSettings.images.svgo);
 	}
 
-	minimizerQueue.push(new ImageMinimizerWebpackPlugin({
-		minimizer: {
-			implementation: ImageMinimizerWebpackPlugin.svgoMinify,
-			options: {
-				encodeOptions: svgoOptions,
+	minimizerQueue.push(
+		new ImageMinimizerWebpackPlugin({
+			minimizer: {
+				implementation: ImageMinimizerWebpackPlugin.svgoMinify,
+				options: {
+					encodeOptions: svgoOptions,
+				},
 			},
-		},
-	}));
+		})
+	);
 }
 
 /**
@@ -334,23 +351,23 @@ Exports ************************************************************************
 
 let _exports = {
 	stats: stats,
-	mode: production? 'production' : 'development',
+	mode: production ? "production" : "development",
 	entry: userSettings.entry,
-	devtool: production ? false : 'source-map',
-	target: 'web',
+	devtool: production ? false : "source-map",
+	target: "web",
 	output: {
 		path: utils.buildPath(env),
-		filename: filenameTemplate('js/[name].js'),
+		filename: filenameTemplate("js/[name].js"),
 		publicPath: utils.publicPath(env),
-		devtoolModuleFilenameTemplate: '[absolute-resource-path]',
-		devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]',
-		libraryExport: 'default',
+		devtoolModuleFilenameTemplate: "[absolute-resource-path]",
+		devtoolFallbackModuleFilenameTemplate: "[absolute-resource-path]",
+		libraryExport: "default",
 		clean: !production,
 	},
 	resolve: {
-		extensions: ['.css', '.js', '.sass', '.scss'],
+		extensions: [".css", ".js", ".sass", ".scss"],
 		alias: {
-			font: 'font',
+			font: "font",
 		},
 		byDependency: {
 			style: {
@@ -358,12 +375,12 @@ let _exports = {
 			},
 		},
 		modules: [
-			'.',
-			path.join(__dirname, 'src'),
-			path.join(__dirname, 'src/api'),
-			path.join(__dirname, 'src/component'),
-			path.join(__dirname, 'src/style'),
-			path.join(__dirname, 'node_modules'),
+			".",
+			path.join(__dirname, "src"),
+			path.join(__dirname, "src/api"),
+			path.join(__dirname, "src/component"),
+			path.join(__dirname, "src/style"),
+			path.join(__dirname, "node_modules"),
 		],
 		plugins: [
 			new DirectoryNamedWebpackPlugin({
@@ -372,64 +389,70 @@ let _exports = {
 		],
 	},
 	resolveLoader: {
-		modules: [path.join(__dirname, 'node_modules')],
+		modules: [path.join(__dirname, "node_modules")],
 	},
 	module: {
 		rules: [
 			{
 				test: jsTestRE,
 				exclude: /node_modules/,
-				use: jsLoaders
+				use: jsLoaders,
 			},
 			{
 				test: cssTestRE,
-				use : (userSettings.cssProcessing && (0 < userSettings.cssProcessing.length)) ? userSettings.cssProcessing : cssProcessing,
+				use:
+					userSettings.cssProcessing &&
+					0 < userSettings.cssProcessing.length
+						? userSettings.cssProcessing
+						: cssProcessing,
 			},
 			{
 				test: imgFullTestRE,
 				include: [
-					path.resolve(__dirname, 'img'),
-					path.resolve(__dirname, 'node_modules'),
+					path.resolve(__dirname, "img"),
+					path.resolve(__dirname, "node_modules"),
 				],
-				type: 'asset',
+				type: "asset",
 				parser: {
 					dataUrlCondition: {
-						maxSize: ('undefined' !== typeof userSettings['base64MaxFileSize']) ? userSettings.base64MaxFileSize : 0,
+						maxSize:
+							"undefined" !==
+							typeof userSettings["base64MaxFileSize"]
+								? userSettings.base64MaxFileSize
+								: 0,
 					},
 				},
 				generator: {
-					filename: '[path][hash][ext]',
+					filename: "[path][hash][ext]",
 				},
 			},
 			{
 				test: fontTestRE,
-				type: 'asset/resource',
+				type: "asset/resource",
 				parser: {
 					dataUrlCondition: {
 						maxSize: 180000,
 					},
 				},
 				generator: {
-					filename: '[path][name][ext]',
+					filename: "[path][name][ext]",
 				},
 			},
-		]
+		],
 	},
 	plugins: plugins,
 	optimization: {
 		minimizer: minimizerQueue,
-	}
-}
+	},
+};
 
 // + Работа с React
 if (withReact) {
-	_exports.resolve.extensions.push('.jsx');
-	let
-		block = null,
+	_exports.resolve.extensions.push(".jsx");
+	let block = null,
 		jsBlock = null,
 		cssBlock = null,
-		imgBlock = null
-	;
+		imgBlock = null;
 	for (block of _exports.module.rules) {
 		if (jsTestRE === block.test) {
 			jsBlock = block;
@@ -450,49 +473,49 @@ if (withReact) {
 			test: jsxTestRE,
 			exclude: /node_modules/,
 			use: {
-				loader: 'babel-loader',
+				loader: "babel-loader",
 				options: {
-					presets: ['@babel/preset-env', '@babel/preset-react']
-				}
-			}
+					presets: ["@babel/preset-env", "@babel/preset-react"],
+				},
+			},
 		});
 	}
 	if (cssBlock) {
-		let
-			index = _exports.module.rules.indexOf(cssBlock),
-			moduleBlock = JSON.parse(JSON.stringify(cssBlock))
-		;
+		let index = _exports.module.rules.indexOf(cssBlock),
+			moduleBlock = JSON.parse(JSON.stringify(cssBlock));
 		moduleBlock.test = cssModuleTestRE;
 		moduleBlock.use[1].options.modules = {
-			mode: 'local',
-			localIdentName: '[folder]__[local]--[hash:base64:3]'
+			mode: "local",
+			localIdentName: "[folder]__[local]--[hash:base64:3]",
 		};
 		_exports.module.rules[index].exclude = cssModuleTestRE;
 		_exports.module.rules.splice(index + 1, 0, moduleBlock);
 	}
 	if (imgBlock) {
-		let
-			index = _exports.module.rules.indexOf(imgBlock)
-		;
+		let index = _exports.module.rules.indexOf(imgBlock);
 		_exports.module.rules.splice(index, 0, {
 			test: svgTestRE,
 			issuer: /\.(jsx?|tsx?)$/,
-			use: ['@svgr/webpack'],
+			use: ["@svgr/webpack"],
 		});
 	}
-	_exports.resolve.modules.splice(-2, 0, path.join(__dirname, 'src/component-react'));
+	_exports.resolve.modules.splice(
+		-2,
+		0,
+		path.join(__dirname, "src/component-react")
+	);
 }
 
 // + Работа с Typescript
 if (withTS) {
 	const loaders = [
 		{
-			loader: 'ts-loader'
-		}
+			loader: "ts-loader",
+		},
 	];
 
 	if (withVue) {
-		loaders[0]['options'] = {
+		loaders[0]["options"] = {
 			appendTsSuffixTo: [vueTestRE],
 		};
 	}
@@ -502,48 +525,54 @@ if (withTS) {
 		loaders.push({
 			loader: path.resolve("./webpack/loaders/prettier.js"),
 			options: {
-				pathModules: /node_modules/g
-			}
+				pathModules: /node_modules/g,
+			},
 		});
 	}
 
-	_exports.resolve.extensions.push('.ts');
-	_exports.resolve.extensions.push('.tsx');
+	_exports.resolve.extensions.push(".ts");
+	_exports.resolve.extensions.push(".tsx");
 	_exports.module.rules.push({
 		test: tsxTestRE,
-		use: loaders
+		use: loaders,
 	});
 }
 
 // + Работа с Vue
 if (withVue) {
-	_exports.resolve.extensions.push('.vue');
-	_exports.resolve.alias['vue$'] = 'vue/dist/vue.esm-bundler.js';
+	_exports.resolve.extensions.push(".vue");
+	_exports.resolve.alias["vue$"] = "vue/dist/vue.esm-bundler.js";
 	_exports.module.rules.push({
 		test: vueTestRE,
-		use: ['vue-loader'],
+		use: ["vue-loader"],
 	});
-	_exports.resolve.modules.splice(-2, 0, path.join(__dirname, 'src/component-vue'));
+	_exports.resolve.modules.splice(
+		-2,
+		0,
+		path.join(__dirname, "src/component-vue")
+	);
 }
 
 if (userSettings.aliases) {
-	_exports.resolve.alias = Object.assign(_exports.resolve.alias, userSettings.aliases);
+	_exports.resolve.alias = Object.assign(
+		_exports.resolve.alias,
+		userSettings.aliases
+	);
 }
 
 if (userSettings.exposeGlobal) {
 	userSettings.exposeGlobal.forEach(function (item) {
-		let
-			overrideValue = ('undefined' !== typeof item['override']) ? item.override : true
-		;
+		let overrideValue =
+			"undefined" !== typeof item["override"] ? item.override : true;
 		_exports.module.rules.push({
 			test: require.resolve(item.module),
-			loader: 'expose-loader',
+			loader: "expose-loader",
 			options: {
 				exposes: {
 					globalName: item.name,
 					override: overrideValue,
-				}
-			}
+				},
+			},
 		});
 	});
 }
@@ -580,31 +609,29 @@ Hot ****************************************************************************
 **/
 
 if (hot) {
-	let
-		host = utils.hotUrl()
-	;
-	_exports.output.publicPath = host + utils.publicPath('dev');
+	let host = utils.hotUrl();
+	_exports.output.publicPath = host + utils.publicPath("dev");
 	_exports.devServer = {
-		allowedHosts: 'all',
+		allowedHosts: "all",
 		headers: {
 			"Access-Control-Allow-Origin": "*",
 			"Access-Control-Allow-Headers": "*",
 			"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 			"Access-Control-Allow-Credentials": "true",
-			"Access-Control-Expose-Headers": "*"
+			"Access-Control-Expose-Headers": "*",
 		},
 		historyApiFallback: true,
-		host: '0.0.0.0',
+		host: "0.0.0.0",
 		port: 8889,
 		hot: true,
 		client: {
-			logging: 'verbose',
-			webSocketURL: host.replace('http', 'ws') + '/ws'
+			logging: "verbose",
+			webSocketURL: host.replace("http", "ws") + "/ws",
 		},
 		static: [
 			{
 				directory: path.resolve(userSettings.docRoot),
-			}
+			},
 		],
 	};
 }
