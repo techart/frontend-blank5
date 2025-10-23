@@ -62,8 +62,16 @@ try {
 // Если прочитали настройки eslint
 if (eslintRC) {
 	console.log("Добавляем настройки eslint...");
-	// Добавялем пресеты
+	// Добавляем пресеты
 	// eslintRC.extends = eslintRC.extends.concat(eslint.extends);
+	// Исправляем названия пресетов для более свежей версии плагина
+	if (lib.checkDepVersion("eslint-plugin-vue", 10, fs)) {
+		let i = 0,
+			l = eslint.extends.length;
+		for (i = 0; i < l; i++) {
+			eslint.extends[i] = eslint.extends[i].replace("/vue3-", "/");
+		}
+	}
 	eslintRC.extends = lib.mergeUnique(eslintRC.extends, eslint.extends);
 	// Добавляем Vue в список глобальных переменных
 	Object.assign(eslintRC.globals, eslint.globals);

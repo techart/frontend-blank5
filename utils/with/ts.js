@@ -12,18 +12,19 @@ const lib = require("./_lib"),
 			lib: ["esnext", "dom", "dom.iterable"],
 			typeRoots: ["./node_modules/@types", "src/component-react/types"],
 			types: ["node"],
+			baseUrl: ".",
 			paths: {
 				"api/*": ["src/api/*"],
 				"apps/*": ["src/component-react/apps/*"],
-				"components/*": ["src/component-react/components/*"],
 				"hooks/*": ["src/component-react/hooks/*"],
 				"modules/*": ["src/component-react/modules/*"],
 				"style/*": ["src/component-react/style/*"],
+				"types/*": ["src/component-react/types/*"],
+				"ui/*": ["src/component-react/ui/*"],
 			},
 			allowJs: true,
 			allowSyntheticDefaultImports: true,
 			alwaysStrict: true,
-			baseUrl: ".",
 			esModuleInterop: true,
 			isolatedModules: true,
 			jsx: "react-jsx",
@@ -131,6 +132,30 @@ if (!fs.existsSync(lib.TS_CONFIG_FILE)) {
 	if (withPacks.React) {
 		console.log("...для React...");
 		lib.writeRC(lib.TS_CONFIG_FILE, tsConfigReact, fs);
+		let entryJsFile = "src/entry/index.js",
+			entryTsFile = "src/entry/index.ts",
+			settingLines = fs.readFileSync(lib.USER_SETTINGS_FILE, "utf-8").split("\n");
+
+		if (fs.existsSync(entryJsFile)) {
+			fs.rmSync(entryJsFile);
+		}
+
+		if (!fs.existsSync(entryTsFile)) {
+			fs.writeFileSync(entryTsFile, "\n", {
+				mode: 0o644,
+			});
+			settingLines = settingLines.map((line) => {
+				if (line.includes(entryJsFile)) {
+					line = line.replace(entryJsFile, entryTsFile);
+				}
+				return line;
+			});
+			fs.writeFileSync(
+				lib.USER_SETTINGS_FILE,
+				settingLines.join("\n"),
+				"utf-8"
+			);
+		}
 	} else if (withPacks.Vue) {
 		console.log("...для Vue...");
 		lib.writeRC(lib.TS_CONFIG_FILE, tsConfigVue, fs);

@@ -9,102 +9,124 @@ const lib = require("./_lib"),
 	eslintRC = lib.readRC(lib.ESLINT_RC_FILE, fs),
 	// Содержимое файла настроек stylelint
 	stylelintRC = lib.readRC(lib.STYLELINT_RC_FILE, fs),
-	// Дополнительная точка сборки React для пользовательских настроек
-	entryPoint = {
-		name: "react",
-		file: "src/entry/react.js",
-		content: "import 'component-react/apps';\n",
+	// Файлы для API
+	apiFiles = {
+		"Forms": {
+			"actions.ts": "export const SEND_FORM = '/forms/contact-us/'",
+			"index.ts": "import Client from 'api/base/index'\n\nimport { SEND_FORM } from './actions'\n\nclass ContactUsAPI extends Client {\n\tconstructor() {\n\t\tsuper()\n\t\tthis.sendForm = this.sendForm.bind(this)\n\t}\n\n\tasync sendForm(data: any) {\n\t\tconst res = await this.exec(`${SEND_FORM}`, 'POST', data, 'FormData') as any\n\t\treturn res.result.data\n\t}\n}\n\nconst instance = new ContactUsAPI()\nexport default instance\n"
+		},
+		"News": {
+			"actions.ts": "export const GET_NEWS = '/content/news/get-items/'",
+			"index.ts": "import Client from 'api/base/index'\n\nimport { GET_NEWS } from './actions'\n\nclass NewsAPI extends Client {\n\tconstructor() {\n\t\tsuper()\n\t\tthis.getNews = this.getNews.bind(this)\n\t}\n\n\tasync getNews(section: string, page: number) {\n\t\tconst res = await this.exec(`${GET_NEWS}?section=${section}&page=${page}`, 'GET') as any\n\t\treturn res.result.data\n\t}\n}\n\nconst instance = new NewsAPI()\nexport default instance\n"
+		},
+		"base": {
+			"base.ts": "class ClientBase {\n\tprivate _endpoint: string = ''\n\tprivate _method: string = ''\n\tprivate _body: any = null\n\tprivate _bodyType: string | null = null\n\tprivate _additionalHeaders: HeadersInit = {}\n\n\tsetDefaultSettings() {\n\t\tthis.setBodyType(null)\n\t\tthis.setAdditionalHeaders({})\n\t\tthis.setBody(null)\n\t}\n\n\tsetEndpoint(endpoint: string) {\n\t\tthis._endpoint = endpoint\n\t}\n\n\tsetMethod(method: string) {\n\t\tthis._method = method\n\t}\n\n\tsetBody(body: any) {\n\t\tthis._body = body\n\t}\n\n\tsetBodyType(bodyType: string | null) {\n\t\tthis._bodyType = bodyType\n\t}\n\n\tsetAdditionalHeaders(additionalHeaders: HeadersInit) {\n\t\tif (additionalHeaders)\n\t\t\tthis._additionalHeaders = Object.assign(this._additionalHeaders, additionalHeaders)\n\t\telse\n\t\t\tthis._additionalHeaders = {}\n\t}\n\n\tgetEndpoint() {\n\t\treturn this._endpoint\n\t}\n\n\tgetMethod() {\n\t\treturn this._method\n\t}\n\n\tgetBody() {\n\t\treturn this._body\n\t}\n\n\tgetBodyType() {\n\t\treturn this._bodyType\n\t}\n\n\tgetAdditionalHeaders() {\n\t\treturn this._additionalHeaders\n\t}\n}\n\nexport default ClientBase\n",
+			"index.ts": "import ClientBase from './base'\nimport { RequestT } from './types'\n\nclass Client extends ClientBase {\n\tconstructor() {\n\t\tsuper()\n\t}\n\n\tasync #requestDo() {\n\t\tlet options: RequestInit = {\n\t\t\tmethod: this.getMethod(),\n\t\t\theaders: {\n\t\t\t\t...this.getAdditionalHeaders(),\n\t\t\t},\n\t\t}\n\n\t\tif (this.getBody() !== null)\n\t\t\toptions.body = this.getBody()\n\n\t\tif (this.getBodyType())\n\t\t\toptions = this.#bodyResolver(options)\n\n\t\tif (this.getMethod().toUpperCase() === 'GET')\n\t\t\tdelete options.body // GET-запросы не должны иметь тело\n\n\t\ttry {\n\t\t\tconst response = await fetch(this.getEndpoint(), options)\n\n\t\t\tthis.setDefaultSettings()\n\n\t\t\tif (!response.ok)\n\t\t\t\treturn { error: response.status }\n\n\t\t\tconst contentType = response.headers.get('content-type')\n\t\t\tif (contentType && contentType.includes('application/json')) {\n\t\t\t\treturn await response.json()\n\t\t\t}\n\n\t\t\treturn await response.text()\n\t\t} catch (error) {\n\t\t\tthis.setDefaultSettings()\n\t\t\tconsole.error('Fetch error:', error)\n\t\t\tthrow error\n\t\t}\n\t}\n\n\t#bodyResolver(options: RequestInit): RequestInit {\n\t\tswitch (this.getBodyType()) {\n\t\t\tcase 'json':\n\t\t\t\toptions.body = this.getBody()\n\t\t\t\toptions.headers = {\n\t\t\t\t\t...options.headers,\n\t\t\t\t\t'Content-Type': 'application/json',\n\t\t\t\t}\n\t\t\t\tbreak\n\t\t\tcase 'FormData':\n\t\t\t\t// не устанавливаем Content-Type вручную — браузер сам добавит boundary\n\t\t\t\toptions.body = this.getBody()\n\t\t\t\tbreak\n\t\t\tcase 'blob':\n\t\t\t\toptions.body = this.getBody()\n\t\t\t\toptions.headers = {\n\t\t\t\t\t...options.headers,\n\t\t\t\t\t'Content-Type': 'text/plain',\n\t\t\t\t}\n\t\t\t\tbreak\n\t\t}\n\n\t\treturn options\n\t}\n\n\tasync exec(\n\t\tendpoint: string,\n\t\tmethod: string,\n\t\tbody: any = null,\n\t\tbodyType: null | string = null,\n\t\tadditionalHeaders: HeadersInit = {}\n\t): Promise<RequestT> {\n\t\tconst url = new URL(`${location.origin}/siteapi${endpoint}`)\n\n\t\tthis.setEndpoint(url.href)\n\t\tthis.setMethod(method)\n\t\tthis.setBody(body)\n\t\tthis.setBodyType(bodyType)\n\t\tthis.setAdditionalHeaders(additionalHeaders)\n\n\t\tconst res = await this.#requestDo()\n\n\t\treturn res\n\t}\n}\n\nexport default Client\n",
+			"types.ts": "export interface RequestT {\n\tendpoint?: string\n\tmethod?: string\n\tbody?: any\n\tbodyType?: string | null\n\tadditionalHeaders?: HeadersInit\n}"
+		}
 	},
 	// Файлы для "блоков"
-	blocks = {
-		"common-blocks": {
+	blockFiles = {
+		"components": {
 			".gitkeep": "",
 		},
-		"common-components": {
-			"common-components.js": "function requireAll(r) {\n\tr.keys().map(r)\n}\n\nrequireAll(require.context('.', true, /^\\.\\/[^/]+\\/[^/.]+\\.(js|css|scss|sass|less|ts)$/))\n",
+		"ui": {
+			".gitkeep": "",
+			"ui.js": "function requireAll(r) {\n\tr.keys().map(r)\n}\n\nrequireAll(require.context('.', true, /^\\.\\/[^/]+\\/[^/.]+\\.(js|css|scss|sass|less|ts)$/))\n",
 		},
+	},
+	// Файлы простых компонентов
+	componentFiles = {
+		"paginationJS": {
+			"paginationJS.ts": "import { StateI, OptionsT, ReloadedT } from \"./types\"\n\nclass PaginationJS implements StateI {\n    currentPage: number = 1\n    showAll: boolean = false\n\titemsCount: number = 0\n\tclassName: string = ''\n    showAllAlways: boolean = false\n\tpagination: HTMLElement | null = null\n\toptions: OptionsT | null = null\n\tonPage: number = 0\n\treloaded: ReloadedT | null = null\n\thandler: ((page: number) => void) | null = null\n\n\tconstructor(options: OptionsT) {\n\t\tif(options.handler)\n\t\t\tthis.handler = options.handler.bind(this)\n\n        this.createTag = this.createTag.bind(this)\n        this.createSeparator = this.createSeparator.bind(this)\n        this.createPaginationItem = this.createPaginationItem.bind(this)\n\t\tthis.createNextPrevItem = this.createNextPrevItem.bind(this)\n        this.returnConditions = this.returnConditions.bind(this)\n        this.renderPagination = this.renderPagination.bind(this)\n        this.paginationItemClickHandler = this.paginationItemClickHandler.bind(this)\n        this.separatorItemClickHandler = this.separatorItemClickHandler.bind(this)\n        this.addClickHandlers = this.addClickHandlers.bind(this)\n        this.removeClickHandlers = this.removeClickHandlers.bind(this)\n\t\tthis.errorBoundaries = this.errorBoundaries.bind(this)\n\t\tthis.removePagination = this.removePagination.bind(this)\n\t\tthis.start = this.start.bind(this)\n\t\tthis.restart = this.restart.bind(this)\n\n\t\tthis.start(options)\n    }\n\n\trestart(options: OptionsT) {\n\t\tthis.currentPage = 1\n\t\t// this.itemsCount = 0\n\t\tthis.showAll = false\n\t\tthis.showAllAlways = true\n\n\t\tthis.removeClickHandlers()\n\n\t\tif(!this.errorBoundaries())\n\t\t\tthis.start(options)\n\t}\n\n\tstart(options: OptionsT) {\n\t\tthis.itemsCount = options.itemsCount\n\t\tthis.currentPage = options.currentPage\n\t\tthis.className = options.className\n\t\tthis.onPage = options.onPage\n\n\t\tthis.pagination = document.querySelector(`.${this.className}`)\n\n        if(options.itemsCount > 99)\n            this.showAllAlways = false\n\n\t\tif(options.reloaded)\n\t\t\tthis.reloaded = options.reloaded\n\n\t\tif(this.itemsCount == 0)\n\t\t\tthis.removePagination()\n\t\telse {\n\t\t\tif(!this.errorBoundaries())\n\t\t\t\tthis.renderPagination()\n\t\t}\n\t}\n\n\terrorBoundaries() {\n\t\tif(this.currentPage < 1) {\n\t\t\tconsole.error('PaginationJS', 'Необходимо указать текущую страницу в options')\n\n\t\t\treturn true\n\t\t}\n\n\t\tif(this.currentPage > Math.ceil(this.itemsCount / this.onPage) && this.itemsCount != 0) {\n\t\t\tconsole.error('PaginationJS', 'Указана несуществующая страница пагинации')\n\n\t\t\treturn true\n\t\t}\n\n\t\tif(!this.pagination) {\n\t\t\tconsole.error('PaginationJS', `Необходимо создать контейнер для рендера: <div class=\"${this.className}\"></div>`)\n\n\t\t\treturn true\n\t\t}\n\n\t\treturn false\n\t}\n\n    createTag(className: string, textContent: string, tag: string = 'div') {\n\t\tconst element = document.createElement(tag)\n\t\telement.className = className\n\t\telement.textContent = textContent\n\n\t\treturn element\n\t}\n\n    createSeparator() {\n\t\treturn this.createTag(`${this.className}__points`, `...`)\n\t}\n\n    createPaginationItem(index: number) {\n\t\tconst item = this.createTag(`${this.className}__item`, `${index}`, this.reloaded ? 'a' : 'div')\n\t\titem.setAttribute('index', `${index}`)\n\t\titem.className += index === this.currentPage ? ' active' : ''\n\n\t\tif(this.reloaded) {\n\t\t\tif(this.reloaded.urlType === 'SEF')\n\t\t\t\titem.setAttribute('href', `/${this.reloaded.currentUrl}${index}/`)\n\t\t\telse\n\t\t\t\titem.setAttribute('href', `/${this.reloaded.currentUrl}/?page=${index}`)\n\t\t}\n\n\t\treturn item\n\t}\n\n\tcreateNextPrevItem(index: number, direction: string, totalItems: number) {\n\t\tconst item = this.createTag(`${this.className}__item ${direction}`, '', this.reloaded ? 'a' : 'div')\n\t\titem.setAttribute('index', `${index}`)\n\n\t\tif(direction === 'next') {\n\t\t\titem.className += totalItems === this.currentPage ? ' disabled' : ''\n\t\t} else {\n\t\t\titem.className += this.currentPage === 1 ? ' disabled' : ''\n\t\t}\n\n\t\tif(this.reloaded) {\n\t\t\tif(this.reloaded.urlType === 'SEF')\n\t\t\t\titem.setAttribute('href', `/${this.reloaded.currentUrl}${index}/`)\n\t\t\telse\n\t\t\t\titem.setAttribute('href', `/${this.reloaded.currentUrl}/?page=${index}`)\n\t\t}\n\n\t\treturn item\n\t}\n\n    returnConditions(totalItems: number) {\n\t\treturn {\n\t\t\tshowAfterFirst: this.currentPage > 3,\n\t\t\tshowAfterFour: this.currentPage < 4,\n\t\t\tshowBeforeLast: this.currentPage > 3 && this.currentPage < totalItems - 2,\n\t\t\tshowLastItems: this.currentPage > totalItems - 3\n\t\t}\n\t}\n\n\tremovePagination() {\n\t\tthis.pagination!.innerHTML = ''\n\t}\n\n    renderPagination(initial = false) {\n\t\tif(!initial)\n\t\t\tthis.removeClickHandlers()\n\n\t\tconst newItems = this.createNewItems()\n\t\tthis.pagination!.innerHTML = ''\n\n\t\tnewItems.forEach((e: any) => {\n\t\t\tthis.pagination?.appendChild(e)\n\t\t})\n\n\t\tthis.addClickHandlers()\n\t}\n\n    paginationItemClickHandler(e: any) {\n        this.currentPage = Number(e.target!.getAttribute('index'))\n        this.showAll = false\n\n\t\tif(this.handler)\n\t\t\tthis.handler(this.currentPage)\n\n        this.renderPagination()\n    }\n\n    separatorItemClickHandler() {\n        this.showAll = true\n\n        this.renderPagination()\n    }\n\n    addClickHandlers() {\n\t\tconst items = document.querySelectorAll(`.${this.className}__item`)\n\n\t\titems.forEach(elem => {\n\t\t\telem.addEventListener('click', this.paginationItemClickHandler)\n\t\t})\n\n\t\tconst separators = document.querySelectorAll(`.${this.className}__points`)\n\n\t\tseparators.forEach(elem => {\n\t\t\telem.addEventListener('click', this.separatorItemClickHandler)\n\t\t})\n\t}\n\n    removeClickHandlers() {\n\t\tconst items = document.querySelectorAll(`.${this.className}__item`)\n\n\t\tif(items) {\n\t\t\titems.forEach(elem => {\n\t\t\t\telem.removeEventListener('click', this.paginationItemClickHandler)\n\t\t\t})\n\n\t\t\tconst separators = document.querySelectorAll(`.${this.className}__points`)\n\n\t\t\tseparators.forEach(elem => {\n\t\t\t\telem.addEventListener('click', this.separatorItemClickHandler)\n\t\t\t})\n\t\t}\n\t}\n\n    createNewItems() {\n\t\tconst newItems: Element[] = []\n\n\t\tconst totalItems = Math.ceil(this.itemsCount / this.onPage)\n\n\t\tconst conditions = this.returnConditions(totalItems)\n\n\t\tconst params = new URLSearchParams(window.location.search);\n\t\tconst currentPage = params.get('page') ?? 1;\n\n\t\tnewItems.push(this.createNextPrevItem(currentPage == 1 ? 1 : +currentPage - 1, 'prev', totalItems))\n\n\t\tArray(totalItems).fill('').forEach((e: Element, index: number) => {\n\t\t\tconst i = index + 1\n\n\t\t\tif(this.showAll || this.showAllAlways || totalItems < 6) {\n\t\t\t\tnewItems.push(this.createPaginationItem(i))\n\t\t\t} else {\n\t\t\t\tif(conditions.showAfterFour) {\n\t\t\t\t\tif(i < 5 || i === totalItems)\n\t\t\t\t\t\tnewItems.push(this.createPaginationItem(i))\n\n\t\t\t\t\tif(i === 4)\n\t\t\t\t\t\tnewItems.push(this.createSeparator())\n\t\t\t\t}\n\n\t\t\t\tif(conditions.showAfterFirst) {\n\t\t\t\t\tif(i === 1 || i === totalItems)\n\t\t\t\t\t\tnewItems.push(this.createPaginationItem(i))\n\n\t\t\t\t\tif(i === 2)\n\t\t\t\t\t\tnewItems.push(this.createSeparator())\n\t\t\t\t}\n\n\t\t\t\tif(conditions.showBeforeLast) {\n\t\t\t\t\tif(i === totalItems - 1)\n\t\t\t\t\t\tnewItems.push(this.createSeparator())\n\n\t\t\t\t\tif(i === this.currentPage + 1 || i === this.currentPage - 1 || i === this.currentPage)\n\t\t\t\t\t\tnewItems.push(this.createPaginationItem(i))\n\t\t\t\t}\n\n\t\t\t\tif(conditions.showLastItems && i > totalItems - 4 && i !== totalItems) {\n\t\t\t\t\tnewItems.push(this.createPaginationItem(i))\n\t\t\t\t}\n\t\t\t}\n\t\t})\n\n\t\tnewItems.push(this.createNextPrevItem(currentPage == totalItems ? +currentPage : +currentPage +1, 'next', totalItems))\n\n\t\treturn newItems\n\t}\n}\n\nexport default PaginationJS",
+			"types.ts": "type ConditionsT = {\n\tshowAfterFirst: boolean\n\tshowAfterFour: boolean\n\tshowBeforeLast: boolean\n\tshowLastItems: boolean\n}\n\nexport type ReloadedT = {\n\tcurrentUrl: string\n\turlType: 'SEF' | 'GET' | '' | string\n}\n\nexport type OptionsT = {\n\tcurrentPage: number\n\titemsCount: number\n\tonPage: number\n\tclassName: string\n\treloaded?: ReloadedT | null\n\thandler?: ((page: number) => void) | null\n}\n\nexport interface StateI {\n\titemsCount: number\n\tshowAll: boolean\n\tonPage: number\n\tshowAllAlways: boolean\n\tclassName: string\n\tpagination: HTMLElement | null\n\toptions: OptionsT | null\n\treloaded: ReloadedT | null\n\thandler: ((page: number) => void) | null\n\n\tcreateTag: (className: string, textContent: string, tag: string) => HTMLElement\n\tcreateSeparator: () => HTMLElement\n\tcreatePaginationItem: (index: number) => HTMLElement\n\treturnConditions: (totalItems: number) => ConditionsT\n\trenderPagination: () => void\n\tpaginationItemClickHandler: (e: Event) => void\n\tseparatorItemClickHandler: () => void\n\taddClickHandlers: () => void\n\tremoveClickHandlers: () => void\n\terrorBoundaries: () => boolean\n\tremovePagination: () => void\n\tstart: (options: OptionsT) => void\n\trestart: (options: OptionsT) => void\n}\n"
+		}
 	},
 	// Файлы для примера компонентов React
 	reactComponents = {
-		apps: {
-			controllers: {
-				".gitkeep": "",
-			},
-			hooks: {
-				".gitkeep": "",
-			},
-			"index.ts": "export { App } from './ui'",
-			pages: {
-				".gitkeep": "",
-			},
-			stores: {
-				".gitkeep": "",
-			},
-			ui: {
-				"index.tsx":
-					"import React from 'react'\n\nconst App: React.FC = () => {\n\treturn (\n\t\t<div>App example</div>\n\t)\n}\n\nexport { App }",
-			},
-		},
-		components: {
-			button: {
-				"buttonHooks.tsx":
-					"import { useState, useEffect, useCallback } from 'react'\nimport { Props } from './types'\n\nconst useButton = (props: Props) => {\n\tconst { handler, size, override, classes, options } = props\n\n\tconst [isActive, setIsActive] = useState<boolean>(false)\n\tconst [activeClass, setActiveClass] = useState<string>('defaultBtnActiveClass')\n\tconst [classesList, setClassesList] = useState<string>(`button`)\n\tconst [currentSize, setCurrentSize] = useState<string | null>('small')\n\tconst [currentAlign, setCurrentAlign] = useState<string>('left')\n\n\tconst onClickHandler = useCallback(() => {\n\t\tif(!handler)\n\t\t\treturn null\n\t\telse {\n\t\t\thandler()\n\t\t\tif(options?.canActive)\n\t\t\t\tsetIsActive(!isActive)\n\t\t}\n\t}, [handler, isActive])\n\n\tuseEffect(() => {\n\t\tif(override) {\n\t\t\tif(!classes) {\n\t\t\t\tthrow new Error('Override button must have prop classes')\n\t\t\t}\n\n\t\t\tsetClassesList(classes!)\n\t\t\tsetCurrentSize(null)\n\t\t} else {\n\t\t\tsetClassesList(`${classesList} ${classes}`)\n\n\t\t\tif(size)\n\t\t\t\tsetCurrentSize(size)\n\n\t\t\tif(options?.Ico?.src)\n\t\t\t\tsetCurrentAlign(`c-${options?.Ico?.align}-ico`)\n\n\t\t\tif(options?.activeClass)\n\t\t\t\tsetActiveClass(options!.activeClass)\n\n\t\t\tif(options?.forceActive)\n\t\t\t\tsetIsActive(true)\n\t\t}\n\n\t}, [])\n\n\treturn { onClickHandler, classesList, currentSize, isActive, activeClass, currentAlign }\n}\n\nexport default useButton",
-				"index.tsx":
-					"import React from 'react'\nimport clsx from 'clsx'\n\nimport { Props } from './types'\n\nimport useButton from './buttonHooks'\n\nconst Button: React.FC<Props> = (props: Props) => {\n\tconst { activeClass, classesList, currentSize, isActive, onClickHandler, currentAlign } = useButton(props)\n\n\treturn (\n\t\t<button\n\t\t\tonClick={onClickHandler}\n\t\t\tclassName={clsx(classesList, currentSize, {\n\t\t\t\t\t[activeClass]: isActive,\n\t\t\t\t\t['disabled']: props.options?.disabled,\n\t\t\t\t})\n\t\t\t}\n\t\t>\n\t\t\t{props.options?.Ico && <div className={currentAlign}>{props.options!.Ico.src}</div>}\n\t\t\t<span>\n\t\t\t\t{props.text}\n\t\t\t</span>\n\t\t</button>\n\t)\n}\n\nexport default React.memo(Button)",
-				"styles.tsx":
-					"import { createUseStyles } from 'react-jss'\nimport { colors } from 'style/variables'\n\nimport { useCommonSvgStrokeTransition } from 'style/svgTransitionsPreset'\n\nexport const useButtonWithIcon = (type: string) => {\n\tconst buttonSvg = useCommonSvgStrokeTransition({\n\t\tactiveColor: colors.colorHover,\n\t\ttiming: '0.3s',\n\t\ttype: type\n\t}).svgContainer\n\n\treturn {\n\t\tbutton: useButtonView().simpleButton,\n\t\tsvg: buttonSvg\n\t}\n}\n\nexport const useButtonView = createUseStyles<string, any>({\n\tsimpleButton: {\n\t\tcolor: colors.colorActive,\n\t\tbackgroundColor: colors.colorWhite,\n\n\t\t'&:hover': {\n\t\t\tbackgroundColor: colors.colorWhite,\n\t\t\tcolor: colors.colorHover,\n\t\t},\n\n\t\t'&.active': {\n\t\t\tbackgroundColor: colors.colorWhite,\n\t\t\tcolor: colors.colorHover,\n\t\t},\n\t}\n})\n",
-				"types.ts":
-					"export type Icon = {\n\tsrc: React.ReactNode\n\talign: string\n}\n\nexport type Options = {\n\tcanActive?: boolean\n\tforceActive?: boolean\n\tactiveClass?: string\n\tIco?: Icon | null\n\tdisabled?: boolean\n}\n\nexport type Props = {\n\ttext: string\n\thandler?: () => void\n\tsize?: string\n\toverride?: boolean\n\tclasses?: string\n\toptions?: Options\n}",
-			},
-			select: {
-				"hooks.ts":
-					"import { useEffect, useState, useCallback, RefObject } from 'react'\n\nconst useSelect = (clear: boolean, ref: RefObject<HTMLLabelElement | null>) => {\n\tconst [curOption, setCurOption] = useState<string | null>(null)\n\tconst [showOptions, setShowOptions] = useState<boolean>(false)\n\n\tuseEffect(() => {\n\t\tif(ref.current) {\n\t\t\tconst outsideMenuClickHandler = (e: Event) => {\n\t\t\t\tif(ref.current && !ref.current.contains(e.target as HTMLElement))\n\t\t\t\t\tsetShowOptions(false)\n\t\t\t}\n\n\t\t\tdocument.addEventListener('click', outsideMenuClickHandler)\n\n\t\t\treturn () => {\n\t\t\t\tdocument.removeEventListener('click', outsideMenuClickHandler)\n\t\t\t}\n\t\t}\n\t}, [ref])\n\n\tuseEffect(() => {\n\t\tif(clear) {\n\t\t\tsetCurOption(null)\n\t\t}\n\t}, [clear])\n\n\treturn {\n\t\tcurOption,\n\t\tsetCurOption,\n\t\tshowOptions,\n\t\tsetShowOptions,\n\t}\n}\n\nexport default useSelect",
-				"index.tsx":
-					"import React, { useCallback, useRef } from 'react'\nimport clsx from 'clsx'\n\nimport useSelect from './hooks'\n\nimport { useDefaultSelect } from './styles'\n\nimport { SelectT } from './types'\n\nconst Select: React.FC<SelectT> = ({\n\toptions,\n\tdisabled,\n\tisValid,\n\tplaceholder,\n\thandler,\n\tclasses,\n\tclear\n}) => {\n\tconst defaultStyles = useDefaultSelect().defaultSelect\n\tconst selectRef = useRef<HTMLLabelElement>(null),\n\n\t\t{\n\t\t\tcurOption,\n\t\t\tshowOptions,\n\t\t\tsetShowOptions,\n\t\t\tsetCurOption,\n\t\t} = useSelect(clear!, selectRef),\n\n\t\tonClickHandler = useCallback((value: string) => {\n\t\t\tsetCurOption(value)\n\t\t\tsetShowOptions(false)\n\n\t\t\tif(handler)\n\t\t\t\thandler(value)\n\t\t}, [])\n\n\treturn (\n\t\t<label className={clsx(defaultStyles, classes, {\n\t\t\t['disabled']: disabled,\n\t\t\t})}\n\t\t\tref={selectRef}\n\t\t>\n\t\t\t<div className={clsx('title', {\n\t\t\t\t['open']: showOptions,\n\t\t\t\t['error']: isValid,\n\t\t\t})} onClick={() => setShowOptions(!showOptions)}>\n\t\t\t\t{ curOption ? curOption : placeholder }\n\t\t\t</div>\n\t\t\t{showOptions &&\n\t\t\t<div className='select'>\n\t\t\t\t{options.map(item => (\n\t\t\t\t\t<div\n\t\t\t\t\t\tkey={item.name}\n\t\t\t\t\t\tclassName={clsx('option', {\n\t\t\t\t\t\t\t['active']: curOption === item.value,\n\t\t\t\t\t\t})}\n\t\t\t\t\t\tonClick={() => onClickHandler(item.value) }\n\t\t\t\t\t>\n\t\t\t\t\t{ item.name }\n\t\t\t\t\t</div>\n\t\t\t\t))}\n\t\t\t</div>\n\t\t\t}\n\t\t</label>\n\t)\n}\n\nexport default React.memo(Select)\n",
-				"styles.tsx":
-					"import { createUseStyles } from 'react-jss'\n\nexport const useDefaultSelect = createUseStyles<string, any>({\n\tdefaultSelect: {\n\t\tposition: 'relative',\n\t\tdisplay: 'flex',\n\t\tflexDirection: 'column',\n\t\tcursor: 'pointer',\n\n\t\t'&.disabled': {\n\t\t\t'pointerEvents': 'none',\n\t\t},\n\n\t\t'& div.title': {\n\t\t\tposition: 'relative',\n\t\t\twidth: '100%',\n\t\t\toverflow: 'hidden',\n\t\t\ttextOverflow: 'ellipsis',\n\n\t\t\t'&::before': {\n\t\t\t\tposition: 'absolute',\n\t\t\t\ttop: '50%',\n\t\t\t\tzIndex: 1,\n\t\t\t\tcontent: `''`,\n\t\t\t}\n\t\t},\n\n\t\t'& div.title.open': {\n\t\t\t'&::before': {\n\t\t\t\ttransform: 'translateY(-50%) rotate(180deg)',\n\t\t\t}\n\t\t},\n\n\t\t'& div.select': {\n\t\t\tdisplay: 'block',\n\t\t\tposition: 'absolute',\n\t\t\ttop: '100%',\n\t\t\tleft: 0,\n\t\t\tzIndex: 99,\n\t\t\twidth: '100%',\n\t\t\toverflowY: 'auto',\n\t\t\toverflowX: 'hidden',\n\t\t},\n\n\t\t'& div.option': {\n\t\t\tlineHeight: 1,\n\t\t},\n\t},\n})\n",
-				"types.ts":
-					"import { RegisterOptions, UseFormRegister, UseFormSetValue } from 'react-hook-form'\n\nexport type SelectT = {\n\toptions: Array<{\n\t\tname: string,\n\t\tvalue: string,\n\t}>\n\tclasses: string\n\tplaceholder: string\n\thandler?: any\n\tdisabled?: boolean\n\tclear?: boolean\n\tisValid?: object | undefined\n}",
-			},
-			title: {
-				"index.module.scss": '@import "~style";\n',
-				"index.tsx":
-					"import React from 'react'\n\nimport styles from './index.module.scss'\n\ntype CommonTitleT = {\n\tchildren: string,\n}\n\nconst Title: React.FC<CommonTitleT> = ({ children }) => {\n\treturn <h1 className={styles.root}>{children}</h1>\n}\n\nexport default React.memo(Title)",
-			},
-		},
-		hooks: {
-			"useWindowDimensions.ts":
-				"import { useState, useEffect } from 'react'\nimport throttle from 'lodash/throttle'\n\nconst useWindowDimensions = (): object => {\n\tconst [size, setWindowSize] = useState({\n\t\twidth: window.innerWidth,\n\t\theight: window.innerHeight\n\t})\n\n\tuseEffect(() => {\n\t\tconst resizeHandler = throttle((e: UIEvent)  => {\n\t\t\tconst w = e.target as Window\n\t\t\tsetWindowSize({\n\t\t\t\twidth: w.innerWidth,\n\t\t\t\theight: w.innerWidth\n\t\t\t})\n\t\t}, 100)\n\n\t\twindow.addEventListener('resize', resizeHandler)\n\n\t\treturn (): void => {\n\t\t\twindow.removeEventListener('resize', resizeHandler)\n\t\t}\n\t}, [])\n\n\treturn size\n}\n\nexport default useWindowDimensions\n",
-		},
-		modules: {
-			modal: {
-				controller: {
-					"index.tsx":
-						"const ModalController = (modalComponent = '') => {\n\tlet component = null\n\n\tswitch (modalComponent) {\n\t\tcase 'sendCheckWord':\n\t\t\tcomponent = <div>компонент1</div>\n\t\t\tbreak\n\t\tcase 'сhangePassword':\n\t\t\tcomponent = <div>компонент2</div>\n\t\t\tbreak\n\t\tdefault:\n\t\t\tcomponent = modalComponent\n\t\t\tbreak\n\t}\n\n\treturn component\n\n}\n\nexport default ModalController",
+		"apps": {
+			"mockApp": {
+				"controllers": {
+					".gitkeep": ""
 				},
-				"index.ts": "export { Modal } from './ui'",
-				lib: {
-					"Store.ts":
-						"import { makeAutoObservable } from 'mobx'\n\nimport ModalController from '../controller'\n\nclass ModalStore {\n\tmodalState: boolean = false\n\tmodalComponent: any = null\n\n\tconstructor() {\n\t\tthis.changeModalComponent = this.changeModalComponent.bind(this)\n\t\tthis.changeModalState = this.changeModalState.bind(this)\n\t\tmakeAutoObservable(this)\n\t}\n\n\tchangeModalState(state: boolean) {\n\t\tthis.modalState = state\n\t}\n\n\tchangeModalComponent(component: any) {\n\t\tthis.modalComponent = ModalController(component)\n\t}\n}\n\nconst Store = new ModalStore()\nexport default Store",
+				"hooks": {
+					".gitkeep": ""
 				},
-				ui: {
-					"index.module.scss":
-						'@import "~style";\n\n.root {\n\ttop: 0;\n\tleft: 0;\n\twidth: 100vw;\n\theight: calc(100vh - calc(100vh - 100%));\n\tposition: fixed;\n\tz-index: 999;\n}\n\n.bg {\n\tposition: relative;\n\tz-index: 2;\n\ttop: 0;\n\tleft: 0;\n\twidth: 100%;\n\theight: 100%;\n\topacity: 0.5;\n\tbackground-color: black;\n}\n\n.content {\n\tposition: absolute;\n\tz-index: 3;\n\ttop: 50%;\n\tleft: 50%;\n\ttransform: translate(-50%, -50%);\n\tdisplay: flex;\n\talign-items: center;\n\tjustify-content: center;\n\tmin-width: 340px;\n\tcolor: #fff;\n}\n\n.buttonWrapper {\n\tmax-width: 1440px;\n\tleft: 50%;\n\ttransform: translateX(-50%);\n\twidth: 100%;\n\ttop: 40px;\n\tposition: absolute;\n\tjustify-content: flex-end;\n\tdisplay: flex;\n\tz-index: 10;\n}\n\n.close {\n\twidth: 22px;\n\theight: 22px;\n\tcolor: #000;\n\tcursor: pointer;\n\tmargin-right: 20px;\n\n\tsvg {\n\t\tpath {\n\t\t\ttransition: fill 0.3s;\n\t\t\tfill: red;\n\t\t}\n\t}\n\n\t&:hover {\n\t\tsvg {\n\t\t\tpath {\n\t\t\t\tfill: red;\n\t\t\t}\n\t\t}\n\t}\n}\n',
-					"index.tsx":
-						"import { createRoot } from 'react-dom/client'\nimport { observer } from 'mobx-react-lite'\n\nimport Store from '../lib/Store'\n\nimport styles from './index.module.scss'\nimport { useCallback } from 'react'\n\nconst Modal = observer(() => {\n\tconst { modalState, modalComponent, changeModalState } = Store\n\n\tconst closeModal = useCallback(() => {\n\t\tchangeModalState(false)\n\t}, [])\n\n\tif(!modalState)\n\t\treturn null\n\n\treturn (\n\t\t<div className={styles.root}>\n\t\t\t<div className={styles.bg} onClick={closeModal}>\n\t\t\t\t<div className={styles.buttonWrapper}>\n\t\t\t\t\t<div className={styles.close} onClick={closeModal}>\n\t\t\t\t\t\tX\n\t\t\t\t\t\t{/* <CloseIcon /> */}\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<div className={styles.content}>\n\t\t\t\t{modalComponent}\n\t\t\t</div>\n\t\t</div>\n\n\t)\n})\n\ndocument.addEventListener('DOMContentLoaded', () => {\n\tconst root = createRoot(document.getElementById('modal') as HTMLElement)\n\troot.render(<Modal />)\n})\n\nexport { Modal }",
+				"index.ts": "export { App } from './ui'",
+				"pages": {
+					".gitkeep": ""
 				},
+				"stores": {
+					".gitkeep": ""
+				},
+				"ui": {
+					"index.tsx": "import React from 'react'\n\nconst App: React.FC = () => {\n\treturn (\n\t\t<div>App example</div>\n\t)\n}\n\nexport { App }"
+				}
+			}
+		},
+		"hooks": {
+			"useWindowDimensions.ts": "import { useState, useEffect } from 'react'\nimport throttle from 'lodash/throttle'\n\nconst useWindowDimensions = (): object => {\n\tconst [size, setWindowSize] = useState({\n\t\twidth: window.innerWidth,\n\t\theight: window.innerHeight\n\t})\n\n\tuseEffect(() => {\n\t\tconst resizeHandler = throttle((e: UIEvent)  => {\n\t\t\tconst w = e.target as Window\n\t\t\tsetWindowSize({\n\t\t\t\twidth: w.innerWidth,\n\t\t\t\theight: w.innerWidth\n\t\t\t})\n\t\t}, 100)\n\n\t\twindow.addEventListener('resize', resizeHandler)\n\n\t\treturn (): void => {\n\t\t\twindow.removeEventListener('resize', resizeHandler)\n\t\t}\n\t}, [])\n\n\treturn size\n}\n\nexport default useWindowDimensions\n"
+		},
+		"modules": {
+			".gitkeep": ""
+		},
+		"types": {
+			"declaration.d.ts": "declare module '*.scss'\ndeclare module '*.module.scss'\ndeclare module '*.svg'"
+		},
+		"ui": {
+			"base": {
+				"Button": {
+					"index.tsx": "import React from 'react'\n\ninterface Props extends React.ComponentProps<'button'> {\n    children: React.ReactElement\n    ariaLabel?: string\n}\n\nconst Button: React.FC<Props> = (props) => {\n    const { children, ...restProps } = props\n\n    const modifiedProps = {\n        ...restProps,\n        \"aria-label\": restProps.ariaLabel ? restProps.ariaLabel : `Кнопка ${(children.props as any).children}`,\n        name: restProps.ariaLabel ? restProps.ariaLabel : `Кнопка ${(children.props as any).children}`\n    }\n\n    const element = React.cloneElement(children, {\n        ...modifiedProps,\n    })\n\n    return element\n}\n\nexport default React.memo(Button)"
+				},
+				"Checkbox": {
+					"index.tsx": "import React from 'react'\n\ntype InputProps = React.InputHTMLAttributes<HTMLInputElement>\n\nconst Checkbox: React.FC<InputProps> = (props) => {\n\tconst { children, ...restProps } = props\n\n\tconst modifiedProps = {\n\t\tstyle: { display: 'none' },\n\t\t...restProps\n\t}\n\n\tconst element = React.cloneElement(children as React.ReactElement, {\n\t\t...modifiedProps,\n\t})\n\n\treturn(\n\t\t<label>\n\t\t\t{element}\n\t\t</label>\n\t)\n}\n\n\nexport default React.memo(Checkbox)"
+				},
+				"InputFile": {
+					"index.tsx": "import React from 'react'\n\ninterface Props extends React.ComponentProps<'input'> {\n    customPattern?: boolean\n}\n\nconst InputFile: React.FC<Props> = (props) => {\n    const { children, ...restProps } = props\n\n\tconst modifiedProps = {\n        accept: \".jpg, .png, .doc, .docx, .odt, .pdf, .txt\",\n        multiple: true,\n        name: 'files[]',\n\t\t...restProps,\n\t}\n\n    const element = React.cloneElement(children as React.ReactElement, {\n        ...modifiedProps,\n    })\n\n    return element\n}\n\nexport default React.memo(InputFile)",
+					"useMultipleFilesInput.ts": "import { useState, useCallback, useRef } from 'react'\n\nconst useFileInput = () => {\n    const inputRef = useRef<HTMLInputElement>(null)\n    const [selectedFiles, setSelectedFiles] = useState<string[]>([])\n\n    const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {\n        const tmp: string[] = []\n\t\tfor (const file of event.target.files!) {\n\t\t\ttmp.push(file.name)\n\t\t}\n\t\tsetSelectedFiles(tmp)\n    }, [])\n\n    const removeFiles = useCallback(() => {\n        inputRef.current!.value = ''\n        setSelectedFiles([])\n    }, [])\n\n    // DataTransfer?\n\n    return { selectedFiles, handleFileChange, removeFiles, inputRef }\n}\n\nexport default useFileInput"
+				},
+				"InputMaskPhone": {
+					"index.tsx": "import React from 'react'\nimport { NumberFormatBase, usePatternFormat } from 'react-number-format'\n\nconst InputMaskPhone = (props: any) => {\n    const { format, ...rest } = usePatternFormat({ ...props, format: props.format })\n\n    const _format = (val: string) => {\n        const firstChar = val.charAt(0)\n\n        if(val.length === 11) {\n            let v = val\n\n            if(format && (firstChar === '8' || firstChar === '7')) {\n                v = val.slice(1)\n            }\n\n            return format ? format(v) : v\n        }\n\n\t\tif (format && (firstChar === '8' || firstChar === '7')) {\n            return ''\n        } else {\n            return format ? format(val) : val\n        }\n    }\n\n\treturn <NumberFormatBase format={_format} {...rest} value={props.value} />\n}\nexport default React.memo(InputMaskPhone)\n"
+				},
+				"InputText": {
+					"index.tsx": "import React from 'react'\n\ninterface Props extends React.ComponentProps<'input'> {\n    customPattern?: boolean\n}\n\nconst InputText: React.FC<Props> = (props) => {\n    const { children, ...restProps } = props\n\n\tconst modifiedProps = {\n\t\tautoComplete: 'on',\n\t\t...restProps,\n\t}\n\n    const element = React.cloneElement(children as React.ReactElement, {\n        ...modifiedProps,\n    })\n\n    return element\n}\n\nexport default React.memo(InputText)"
+				}
 			},
-		},
-		style: {
-			"svgTransitionsPreset.ts":
-				"import { createUseStyles } from 'react-jss'\n\ntype RuleNames = 'svgContainer'\n\ntype useCommonSvgStrokeTransitionType = {\n\ttiming?: string\n\tactiveColor?: string\n\ttype?: string\n}\n\nexport const useCommonSvgStrokeTransition = createUseStyles<RuleNames, any>({\n\tsvgContainer: {\n\t\t'& div': {\n\t\t\tdisplay: 'flex',\n\t\t\talignItems: 'center'\n\t\t},\n\n\t\t'& svg path': {\n\t\t\ttransition: props => `stroke ${props.timing ?? '0.3s'}, fill ${props.timing ?? '0.3s'}`\n\t\t},\n\n\t\t'&:hover svg path': {\n\t\t\t'stroke': props => props.type === 'stroke' ? props.activeColor : '',\n\t\t\t'fill': (props: useCommonSvgStrokeTransitionType) => props.type === 'fill' ? props.activeColor : '',\n\t\t},\n\n\t\t'&.active svg path': {\n\t\t\t'stroke': props => props.type === 'stroke' ? props.activeColor : '',\n\t\t\t'fill': (props: useCommonSvgStrokeTransitionType) => props.type === 'fill' ? props.activeColor : '',\n\t\t},\n\n\t\t'& .c-right-ico': {\n\t\t\torder: 1\n\t\t}\n\t}\n})",
-			"variables.ts":
-				"export const colors = {\n\tcolorWhite: '#fff',\n\tcolorActive: '#005258',\n\tcolorHover: '#8eb533',\n}",
-		},
-		types: {
-			"declaration.d.ts":
-				"declare module '*.scss'\ndeclare module '*.module.scss'\ndeclare module '*.svg'",
-		},
+			"common": {
+				".gitkeep": "",
+				"CheckboxUI": {
+					"index.module.scss": ".view {\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tbackground-color: #E6E6E6;\n\twidth: 22px;\n\theight: 22px;\n\tborder-radius: 100%;\n\tborder: 1px solid transparent;\n\ttransition: border-color 0.3s ease;\n\n\t@include breakpoint(600) {\n\t\twidth: 28px;\n\t\theight: 28px;\n\t}\n\n\t@include breakpoint(1920) {\n\t\twidth: 1.4rem;\n\t\theight: 1.4rem;\n\t\tborder: 0.05rem solid transparent;\n\t}\n}\n\t\n.checked {\n\tbackground: $colorBlack;\n\twidth: 14px;\n\theight: 14px;\n\tborder-radius: 100%;\n\n\t@include breakpoint(1600) {\n\t\twidth: 0.8rem;\n\t\theight: 0.8rem;\n\t}\n}\n  \n.disabled {\n\t&::before {\n\t\tbackground-color: $colorDisabled;\n\t\tcursor: not-allowed;\n\t}\n}\n\n.error {\n\tborder-color: $colorRed;\n}\n",
+					"index.tsx": "import React from 'react'\nimport clsx from 'clsx'\n\n// import CheckedIcon from 'assets/svg/checkbox_icon.svg'\n\nimport styles from './index.module.scss'\n\ninterface Props extends React.InputHTMLAttributes<HTMLInputElement> {\n\terror?: string\n}\n\nconst CheckboxUI: React.FC<Props> = ({ error, ...props }) => {\n\treturn (\n\t\t<div>\n\t\t\t<input type=\"checkbox\" style={{ display: 'none' }} {...props} />\n\t\t\t<div className={clsx(styles.view, {\n\t\t\t\t[styles.error]: error\n\t\t\t})}>\n\t\t\t\t{props.checked && <div className={styles.checked} />}\n\t\t\t</div>\n\t\t</div>\n\n\t)\n}\n\nexport default CheckboxUI"
+				},
+				"HtmlContentUI": {
+					"index.module.scss": ".root {\n    &.bold {\n        font-weight: 700;\n    }\n\n    &.gray {\n        color: $colorGrayLight;\n    }\n}",
+					"index.tsx": "import React from 'react'\nimport clsx from 'clsx'\n\nimport styles from './index.module.scss'\n\ntype Props = {\n\thtmlText: string\n\tgray?: boolean\n}\n\nconst HtmlContentUI: React.FC<Props> = ({ htmlText, gray }) => {\n\treturn (\n\t\t<div className={clsx(styles.root, 'c-text', { [styles.gray]: gray })}\n\t\t\tdangerouslySetInnerHTML={{ __html: htmlText }}>\n\t\t</div>\n\t)\n}\n\nexport default HtmlContentUI"
+				},
+				"InputFileUI": {
+					"index.module.scss": ".root {\n\tdisplay: none;\n}",
+					"index.tsx": "import React from 'react'\nimport clsx from 'clsx'\n\nimport styles from './index.module.scss'\n\ninterface Props extends React.InputHTMLAttributes<HTMLInputElement> {\n\terror?: string\n}\n\nconst InputFileUI: React.FC<Props> = ({ error, ...props }) => {\n\treturn <input className={clsx(styles.root, {\n\t\t[styles.error]: error\n\t})} {...props} />\n}\n\nexport default InputFileUI"
+				},
+				"InputTextUI": {
+					"index.module.scss": ".root {\n\tposition: relative;\n\tpadding: 20px 22px;\n\tborder-radius: 22px;\n\twidth: 100%;\n\tfont-size: 16px;\n\tcolor: $colorGrayLight;\n\tbox-shadow: 1px 1px 0 0 rgba($colorBlack, 0.05);\n\tborder: 1px solid transparent;\n\tbackground-color: $colorWhite;\n\ttransition: box-shadow 0.3s ease, border-color 0.3s ease;\n\n\t@include breakpoint(600) {\n\t\tfont-size: 18px;\n\t\tborder-radius: 33px;\n\t\tpadding: 26px 28px;\n\t}\n\n\t@include breakpoint(1280) {\n\t\tfont-size: 20px;\n\t}\n\n\t@include breakpoint(1600) {\n\t\tpadding: 28px 40px;\n\t}\n\n\t@include breakpoint(1920) {\n\t\tfont-size: 1rem;\n\t\tpadding: 1.4rem 2rem;\n\t\tborder-radius: 1.65rem;\n\t\tborder: 0.05rem solid transparent;\n\t\tbox-shadow: 0.05rem 0.05rem 0 0 rgba($colorBlack, 0.05);\n\t}\n\n\t&:focus,\n\t&:hover {\n\t\tbox-shadow: 2px 2px 8px 0 rgba($colorBlack, 0.05);\n\n\t\t@include breakpoint(1920) {\n\t\t\tbox-shadow: 0.1rem 0.1rem 0.4rem 0 rgba($colorBlack, 0.05);\n\t\t}\n\t}\n}\n\n.error {\n\tborder-color: $colorRed;\n}",
+					"index.tsx": "import React from 'react'\nimport clsx from 'clsx'\n\nimport styles from './index.module.scss'\n\ninterface Props extends React.InputHTMLAttributes<HTMLInputElement> {\n\terror?: string\n}\n\nconst InputTextUI: React.FC<Props> = ({ error, ...props }) => {\n\treturn <input className={clsx(styles.root, {\n\t\t[styles.error]: error\n\t})} {...props} />\n}\n\nexport default InputTextUI",
+					"phoneInputUI.tsx": "import React from 'react'\nimport clsx from 'clsx'\n\nimport PhoneFormat from 'ui/base/InputMaskPhone'\n\nimport styles from './index.module.scss'\n\ninterface Props extends React.InputHTMLAttributes<HTMLTextAreaElement> {\n\terror?: string\n\tformat: string\n\tmask: string\n}\n\nconst PhoneInputUI: React.FC<Props> = ({ error, ...props }) => {\n\treturn (\n\t\t<PhoneFormat\n\t\t\tclassName={clsx(styles.root, {\n\t\t\t\t[styles.error]: error\n\t\t\t})}\n\t\t\t{...props}\n\t\t/>\n\t)\n}\n\nexport default PhoneInputUI"
+				},
+				"TextAreaUI": {
+					"index.module.scss": ".root {\n\tpadding: 20px 22px;\n\tborder-radius: 22px;\n\twidth: 100%;\n\tfont-size: 16px;\n\tcolor: $colorGrayLight;\n\tbox-shadow: 1px 1px 0 0 rgba($colorBlack, 0.05);\n\tborder: 1px solid transparent;\n\tbackground-color: $colorWhite;\n    min-height: 164px;\n\toutline: none;\n\tresize: none;\n\ttransition: box-shadow 0.3s ease;\n\n\t@include breakpoint(600) {\n\t\tfont-size: 18px;\n\t\tpadding: 26px 28px;\n\t\tborder-radius: 33px;\n\t}\n\n\t@include breakpoint(1280) {\n\t\tfont-size: 20px;\n\t}\n\n\t@include breakpoint(1600) {\n\t\tpadding: 28px 40px;\n\t}\n\n\t@include breakpoint(1920) {\n\t\tfont-size: 1rem;\n\t\tborder-size: 0.05rem;\n\t\tpadding: 1.4rem 2rem;\n\t\tborder-radius: 1.65rem;\n\t}\n\n\t&:focus,\n\t&:hover {\n\t\tbox-shadow: 2px 2px 8px 0 rgba($colorBlack, 0.05);\n\t}\n}",
+					"index.tsx": "import React from 'react'\n\nimport styles from './index.module.scss'\n\ninterface Props extends React.InputHTMLAttributes<HTMLTextAreaElement> {\n\terror?: string\n}\n\nconst TextAreaUI: React.FC<Props> = (props) => {\n\treturn <textarea className={styles.root} {...props} />\n}\n\nexport default TextAreaUI\n"
+				}
+			},
+			"components": {
+				"Modal": {
+					"index.ts": "export { Modal as default } from './ui'",
+					"ui": {
+						"hooks.tsx": "// import React, { useCallback, useEffect } from 'react'\n// import { useShallow } from 'zustand/react/shallow'\n\n// import useWindow from '@/client/services/useWindow'\n\n// const useModalHook = ({ dialogRef }: { dialogRef: React.RefObject<HTMLDialogElement | null> }) => {\n    // const { modalState, modalComponent, setModalState, title, text, setTitle, setText } = useWindow((\n\t// \tuseShallow((state) => ({\n\t// \t\tmodalState: state.modalState,\n\t// \t\tmodalComponent: state.modalComponent,\n\t// \t\tsetModalState: state.setModalState,\n\t// \t\ttitle: state.title,\n\t// \t\ttext: state.text,\n\t// \t\tsetTitle: state.setTitle,\n\t// \t\tsetText: state.setText\n\t// \t}))\n\t// ))\n\n\t// const closeModal = useCallback(() => {\n\t// \tsetModalState(false)\n\t// \tsetTitle(null)\n\t// \tsetText(null)\n\t// \tdocument.querySelector('.html')!.classList.remove('c-overflowHidden')\n\t// }, [])\n\n\t// const closeOnBackdrop = useCallback((e: React.SyntheticEvent) => {\n\t// \tif(e.target === dialogRef.current)\n\t// \t\tcloseModal()\n\t// }, [])\n\n\t// const escapeDownHandler = useCallback((e: KeyboardEvent): void => {\n\t// \tif (e.key === 'Escape')\n\t// \t\tcloseModal()\n\t// }, [])\n\n\t// useEffect(() => {\n\t// \tdocument.addEventListener('keydown', escapeDownHandler)\n\t// }, [])\n\n\t// useEffect(() => {\n\t// \tif(modalState) {\n\t// \t\t(dialogRef.current! as HTMLDialogElement).showModal()\n\t// \t\tdocument.querySelector('.html')!.classList.add('c-overflowHidden')\n\t// \t}\n\t// \telse\n\t// \t\t(dialogRef.current! as HTMLDialogElement).close()\n\t// }, [modalState])\n\n    // return {\n    //     modalComponent,\n    //     closeModal,\n\t// \tcloseOnBackdrop,\n\t// \ttitle,\n\t// \ttext\n    // }\n// }\n\n// export default useModalHook",
+						"index.module.scss": ".root {\n\tborder-radius: 33px;\n\tposition: relative;\n\tborder: none;\n\toutline: none;\n\tbackground-color: $colorGrayBackground;\n\n\t&::backdrop {\n\t\tbackdrop-filter: blur(4px);\n\t\tbackground-color: rgba($colorBlack, 0.2);\n\t}\n\n\t@include breakpoint(1600) {\n\t\twidth: 56%;\n\t}\n\n\t@include breakpoint(1920) {\n\t\tborder-radius: 1.65rem;\n\t}\n}\n\n.title {\n\tfont-size: 24px;\n\tmargin-bottom: 16px;\n\tfont-weight: 700;\n\ttext-transform: uppercase;\n\tpadding-top: 32px;\n\tcolor: $colorGrayBlack;\n\n\t@include breakpoint(400) {\n\t\tpadding-top: 0;\n\t}\n\n\t@include breakpoint(1280) {\n\t\tfont-size: 40px;\n\t\tmargin-bottom: 24px;\n\t}\n\n\t@include breakpoint(1920) {\n\t\tfont-size: 2rem;\n\t\tmargin-bottom: 1.2rem;\n\t}\n}\n\n.text {\n\tcolor: $colorGrayLight;\n\tfont-size: 16px;\n\tmargin-bottom: 24px;\n\n\t@include breakpoint(1280) {\n\t\tmargin-bottom: 40px;\n\t\tfont-size: 20px;\n\t}\n\n\t@include breakpoint(1920) {\n\t\tfont-size: 1rem;\n\t\tmargin-bottom: 2rem;\n\t}\n}\n\n.close {\n\tposition: absolute;\n\tright: 16px;\n\ttop: 16px;\n\twidth: 40px;\n\theight: 40px;\n\tborder-radius: 50%;\n\tdisplay: inline-flex;\n\tjustify-content: center;\n\talign-items: center;\n\tcursor: pointer;\n\tbackground-color: $colorWhite;\n\n\t@include breakpoint(1280) {\n\t\tright: 48px;\n\t\ttop: 40px;\n\t\twidth: 80px;\n\t\theight: 80px;\n\t}\n\n\t@include breakpoint(1920) {\n\t\twidth: 4rem;\n\t\theight: 4rem;\n\t}\n}\n\n.contentWrapper {\n\tpadding: 24px 40px;\n\n\t@include breakpoint(1280) {\n\t\tpadding: 48px 88px;\n\t}\n\n\t@include breakpoint(1920) {\n\t\tpadding: 2rem 4.4rem;\n\t}\n}\n\n.closeButton {\n\tcursor: pointer;\n\n\tpath {\n\t\t\ttransition: stroke 0.3s ease;\n\t\t\tstroke: $colorBlack;\n\t\t}\n\n\t&:hover {\n\t\tpath {\n\t\t\tstroke: $colorRed;\n\t\t}\n\t}\n}\n",
+						"index.tsx": "// 'use client'\n\n// import { useRef } from 'react'\n\n// import CloseIco from '/public/svg/close_icon.svg'\n\n// import useModalHook from './hooks'\n\n// import styles from './index.module.scss'\n\nfunction Modal() {\n// \tconst dialogRef = useRef<HTMLDialogElement | null>(null)\n\n// \tconst { modalComponent, closeOnBackdrop, closeModal, title, text } = useModalHook({ dialogRef })\n\n// \treturn (\n// \t\t<dialog className={styles.root} ref={dialogRef} onClick={closeOnBackdrop}>\n// \t\t\t<div className={styles.content}>\n// \t\t\t\t<div className={styles.close} onClick={closeModal}>\n// \t\t\t\t\t<CloseIco className={styles.closeButton} />\n// \t\t\t\t</div>\n// \t\t\t\t<div className={styles.contentWrapper}>\n// \t\t\t\t\t{title && <div className={styles.title}>{title}</div>}\n// \t\t\t\t\t{text && <div className={styles.text}>{text}</div>}\n// \t\t\t\t\t{modalComponent}\n// \t\t\t\t</div>\n// \t\t\t</div>\n// \t\t</dialog>\n// \t)\n}\n\nexport { Modal }\n"
+					}
+				}
+			}
+		}
 	},
 	reactUtils = {
 		react: {
@@ -146,7 +168,10 @@ const lib = require("./_lib"),
 	settingLines = fs.readFileSync(lib.USER_SETTINGS_FILE, "utf-8").split("\n"),
 	settingsPrepend = "const entriesModule = require('./user.entries')\n\n",
 	entriesContent = "// Подключайте сюда и экспортируйте описания сборок страниц\n// const mainEntry = require('./_entries/mainEntry')\n\nmodule.exports = {\n\t// mainEntry,\n}",
-	packageData = lib.readRC("package.json", fs);
+	packageData = lib.readRC("package.json", fs),
+
+	commonBlocksDir = "src/block/common",
+	commonBlocksFile = `${commonBlocksDir}/common.js`;
 
 console.log("");
 
@@ -176,68 +201,39 @@ if (stylelintRC) {
 
 // Если прочитали пользовательские настройки
 if (settings && settingLines) {
-	// Если не нашли в списке точек сборки точку сборки для React
-	if ("undefined" === typeof settings.entry[entryPoint.name]) {
-		let // В содержимом файла с настройками находим строку с началом списка точек сборки
-			entryStart = settingLines.findIndex((line) =>
-				line.match(/^\s+entry:\s+\{$/)
-			),
-			// Находим строку с окончанием списка точек сборки
-			entryFinish =
-				0 <= entryStart
-					? settingLines
-							.slice(entryStart)
-							.findIndex((line) => line.match(/^\s+\},$/)) +
-						entryStart
-					: -1;
-
-		console.log("Создаём точку сборки react...");
-		if (0 < entryFinish) {
-			console.log(
-				"Добавляем запись о точке сборке в список точек сборки..."
-			);
-			// Вставляем перед окончанием списка точек сборки запись о точке сборки react
-			settingLines.splice(
-				entryFinish,
-				0,
-				`\t\t${entryPoint.name}: ['./${entryPoint.file}'],`
-			);
-			// Сохраняем изменённые настройки в файл
-			fs.writeFileSync(
-				lib.USER_SETTINGS_FILE,
-				settingsPrepend + settingLines.join("\n"),
-				"utf-8"
-			);
-			// Создаём "болванку" для подключения сборок страниц
-			if (!fs.existsSync(entryPoint.file)) {
-				console.log("Создаём файл с описаниями сборок страниц react...");
-				fs.writeFileSync(
-					lib.USER_ENTRIES_FILE,
-					entriesContent,
-					"utf-8"
-				);
-			} else {
-				console.log("Файл с описаниями сборок страниц react уже существует.");
-			}
-		}
-
-		if (!fs.existsSync(entryPoint.file)) {
-			console.log("Создаём файл точки сборки react...");
-			fs.writeFileSync(entryPoint.file, entryPoint.content);
-		} else {
-			console.log("Файл точки сборки react уже существует.");
-		}
-	} else {
-		console.log("Точка сборки react уже задана в файле настроек.");
-	}
-
 	lib.makeDir(lib.REACT_DIR, fs);
 	console.log("Формируем файлы примера React-приложения...");
 	lib.makeFiles(reactComponents, lib.REACT_DIR, fs);
 	console.log("Добавляем файлы React-утилит...");
 	lib.makeFiles(reactUtils, "utils", fs);
+	console.log("Добавляем каталоги API React-приложения...");
+	lib.makeFiles(apiFiles, lib.API_DIR, fs);
+	if (fs.existsSync(commonBlocksDir)) {
+		console.log("Удаляем каталог стандартных \"блоков\"...");
+		if (fs.existsSync(commonBlocksFile)) {
+			fs.rmSync(commonBlocksFile);
+		}
+		fs.rmdirSync(commonBlocksDir);
+	}
 	console.log("Добавляем каталоги \"блоков\" React-приложения...");
-	lib.makeFiles(blocks, lib.BLOCKS_DIR, fs);
+	lib.makeFiles(blockFiles, lib.BLOCKS_DIR, fs);
+	console.log("Добавляем каталоги JS компонентов...");
+	lib.makeFiles(componentFiles, lib.COMPONENT_DIR, fs);
+
+	// Создаём "болванку" для подключения сборок страниц
+	console.log("Создаём файл с описаниями сборок страниц react...");
+	fs.writeFileSync(
+		lib.USER_ENTRIES_FILE,
+		entriesContent,
+		"utf-8"
+	);
+
+	// Сохраняем изменённые настройки в файл
+	fs.writeFileSync(
+		lib.USER_SETTINGS_FILE,
+		settingsPrepend + settingLines.join("\n"),
+		"utf-8"
+	);
 }
 
 if (packageData) {

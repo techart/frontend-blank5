@@ -241,7 +241,9 @@ let cssProcessing = [
 	MiniCssExtractPlugin.loader,
 	cssLoader,
 	"postcss-loader",
-	"sass-loader",
+	{
+		loader: "sass-loader",
+	},
 ];
 
 // Подключаем лоудер prettier
@@ -482,11 +484,26 @@ if (withReact) {
 	}
 	if (cssBlock) {
 		let index = _exports.module.rules.indexOf(cssBlock),
-			moduleBlock = JSON.parse(JSON.stringify(cssBlock));
+			moduleBlock = JSON.parse(JSON.stringify(cssBlock)),
+			sassIndex = moduleBlock.use.findIndex((l) => {
+				return ("sass-loader" === (l.loader || l));
+			});
 		moduleBlock.test = cssModuleTestRE;
 		moduleBlock.use[1].options.modules = {
 			mode: "local",
 			localIdentName: "[folder]__[local]--[hash:base64:3]",
+		};
+		(0 <= sassIndex) && moduleBlock.use[sassIndex] = {
+			loader: "sass-loader",
+			options: {
+				additionalData: (content, loaderContext) => {
+					const { resourcePath, rootContext } = loaderContext,
+						relativePath = path.relative(rootContext, resourcePath);
+					if (relativePath.startsWith("src/component-react")) {
+						return `@use "style" as *;` + content;
+					}
+				},
+			},
 		};
 		_exports.module.rules[index].exclude = cssModuleTestRE;
 		_exports.module.rules.splice(index + 1, 0, moduleBlock);

@@ -19,6 +19,26 @@ const // Функция формирования структуры катало
 				makeFiles(entries[name], path, fs);
 			}
 		}
+	},
+
+	getDeps = (fs) => {
+		const pkgInfoSrc = fs.readFileSync("package.json", "utf-8"),
+			pkgInfo = JSON.parse(pkgInfoSrc),
+			depsList = {};
+		if (pkgInfo.dependencies) {
+			depsList = Object.assign(depsList, pkgInfo.dependencies);
+		}
+		if (pkgInfo.devDependencies) {
+			depsList = Object.assign(depsList, pkgInfo.devDependencies);
+		}
+		return depsList;
+	},
+
+	checkDepVersion = (entry, version, fs) => {
+		const depsList = getDeps(fs),
+			entryVersion = depsList[entry] || null,
+			versionParts = entryVersion ? entryVersion.replace("^", "").split(".") : null;
+		return versionParts ? parseInt(version, 10) <= parseInt(versionParts[0], 10) : null;
 	};
 
 module.exports = {
@@ -33,8 +53,12 @@ module.exports = {
 	// Имя файла с описанием сборок страниц (React)
 	USER_ENTRIES_FILE: "user.entries.js",
 
+	// Каталог API
+	API_DIR: "src/api",
 	// Каталог блоков
 	BLOCKS_DIR: "src/block",
+	// Каталог JS компонентов
+	COMPONENT_DIR: "src/component",
 	// Каталог компонентов React
 	REACT_DIR: "src/component-react",
 	// Каталог компонентов Vue
@@ -72,4 +96,8 @@ module.exports = {
 		}
 		return r;
 	},
+
+	getDeps,
+
+	checkDepVersion,
 };
