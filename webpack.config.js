@@ -493,7 +493,7 @@ if (withReact) {
 			mode: "local",
 			localIdentName: "[folder]__[local]--[hash:base64:3]",
 		};
-		(0 <= sassIndex) && moduleBlock.use[sassIndex] = {
+		(0 <= sassIndex) && (moduleBlock.use[sassIndex] = {
 			loader: "sass-loader",
 			options: {
 				additionalData: (content, loaderContext) => {
@@ -504,7 +504,7 @@ if (withReact) {
 					}
 				},
 			},
-		};
+		});
 		_exports.module.rules[index].exclude = cssModuleTestRE;
 		_exports.module.rules.splice(index + 1, 0, moduleBlock);
 	}
