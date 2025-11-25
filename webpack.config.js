@@ -28,7 +28,8 @@ var hot = env === "hot";
 
 var date = new Date();
 
-let ImageMinimizerWebpackPlugin = null;
+let ImageMinimizerWebpackPlugin = null,
+	ForkTsCheckerWebpackPlugin = null;
 
 let filenameTemplate = function (template) {
 	if (production) {
@@ -179,6 +180,7 @@ var plugins = [
 		emitError: true,
 		emitWarning: true,
 		quiet: false,
+		fix: userSettings.useStylelintAutoFix,
 	}),
 
 	new MiniCssExtractPlugin({
@@ -201,6 +203,14 @@ var plugins = [
 		cwd: process.cwd(),
 	}),
 ];
+if (withTS) {
+	try {
+		ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+		plugins.push(new ForkTsCheckerWebpackPlugin());
+	} catch {
+		// ...
+	}
+}
 if (withVue) {
 	const { VueLoaderPlugin } = require("vue-loader");
 	plugins.push(new VueLoaderPlugin());
